@@ -21,3 +21,6 @@ wandb/
 *.pt
 *.pth
 *.safetensors
+
+# Python package metadata
+*.egg-info/
