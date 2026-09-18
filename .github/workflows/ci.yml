@@ -6,15 +6,15 @@ on:
 
 jobs:
   test:
-    # CI 只运行 CPU 测试，不进行模型训练。
-    runs-on: ubuntu-latest
+    # 固定 Ubuntu 版本，避免 ubuntu-latest 迁移导致环境突然变化。
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
