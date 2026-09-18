@@ -1,0 +1,7 @@
+# 代码和文档在 Git 中统一保存为 LF，避免 Windows/Linux CI 产生无意义差异。
+* text=auto
+*.py text eol=lf
+*.toml text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.md text eol=lf

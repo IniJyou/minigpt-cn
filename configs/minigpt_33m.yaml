@@ -1,0 +1,15 @@
+# 计划中的正式预训练模型，参数量目标约为 33M。
+# 当前仓库只会读取这些结构参数，模型实现将在后续学习阶段完成。
+model:
+  vocab_size: 16000        # Byte-level BPE 词表大小
+  context_length: 512      # 每条训练序列包含的 token 数
+  n_layers: 8              # Decoder Block 数量
+  n_heads: 8               # 每个 head 的维度为 512 / 8 = 64
+  d_model: 512             # 残差流和 token embedding 的宽度
+  d_ff: 1344               # SwiGLU 中间维度，用于控制总参数量
+  norm: rmsnorm            # 使用 RMSNorm
+  position_encoding: rope  # 使用旋转位置编码 RoPE
+  activation: swiglu       # 使用门控激活 SwiGLU
+  tie_embeddings: true     # 输入 embedding 与输出 projection 共享权重
+  dropout: 0.1             # 训练时的 dropout 概率
+  bias: false              # 线性层默认不使用 bias

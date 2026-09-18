@@ -1,0 +1,15 @@
+# 轻量配置用于 CPU CI、小数据过拟合和训练系统的快速冒烟测试。
+# 它不是最终模型配置，也不用于比较正式实验结果。
+model:
+  vocab_size: 1024          # 词表大小：模型最多能识别 1024 个不同的 token
+  context_length: 64        # 上下文长度：一次最多处理 64 个 token
+  n_layers: 2               # Transformer 层数：堆叠 2 个解码器层
+  n_heads: 4                # 注意力头数：每个头的维度 = d_model / n_heads = 32
+  d_model: 128              # 隐藏层维度：每个 token 的向量表示长度
+  d_ff: 336                 # 前馈网络中间维度：SwiGLU 常用约为 d_model 的 8/3 倍，这里取 336
+  norm: rmsnorm             # 归一化方式：使用 RMSNorm，比 LayerNorm 更轻量
+  position_encoding: rope   # 位置编码：使用 RoPE（旋转位置编码），通过旋转注入位置信息
+  activation: swiglu        # 激活函数：使用 SwiGLU 门控线性单元，通常效果优于 ReLU/GELU
+  tie_embeddings: true      # 权重共享：词嵌入层与输出投影层共享权重，减少参数量
+  dropout: 0.1              # Dropout 概率：训练时随机丢弃 10% 的神经元，防止过拟合
+  bias: false               # 偏置项：线性层和归一化层不使用 bias，进一步减少参数
