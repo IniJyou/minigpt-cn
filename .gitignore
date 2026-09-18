@@ -1,0 +1,23 @@
+# Python virtual environment
+.venv/
+
+# Python and test caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# Local secrets
+.env
+
+# Training artifacts
+data/raw/
+data/processed/
+checkpoints/
+logs/
+wandb/
+
+# Model weights
+*.pt
+*.pth
+*.safetensors
