@@ -4,19 +4,27 @@
 
 ## 计划数据源
 
-- 中文 Wikipedia：使用正式训练时最新、已经完整发布的 dump。
-- 中文 Wikisource：使用正式训练时最新、已经完整发布的 dump。
+- 中文 Wikipedia、中文 Wikisource：下载前查询最新完整发布的 dump，固定有日期的 URL，
+  不用会变化的 latest；本轮候选版本均为 20261001，尚未下载或验收正文。
 
-正式下载前必须记录：
+2026-10-11 已只读核对官方状态元数据；本地 SHA-256 必须在下载完成后另行计算，
+以下不是正式训练数据已验收清单：
 
-| 字段 | 内容 |
-| --- | --- |
-| 数据集名称 | 待填写 |
-| 发布日期 | 待填写 |
-| 下载 URL | 待填写 |
-| 许可 | 待核实并填写 |
-| 文件大小 | 待填写 |
-| SHA-256 | 待填写 |
+| 字段 | 中文 Wikipedia | 中文 Wikisource |
+| --- | --- | --- |
+| dump 版本 | 20261001 | 20261001 |
+| 下载 URL | [pages-articles.xml.bz2](https://dumps.wikimedia.org/zhwiki/20261001/zhwiki-20261001-pages-articles.xml.bz2) | [pages-articles.xml.bz2](https://dumps.wikimedia.org/zhwikisource/20261001/zhwikisource-20261001-pages-articles.xml.bz2) |
+| 官方状态 | [articlesdumprecombine: done](https://dumps.wikimedia.org/zhwiki/20261001/dumpstatus.json) | [articlesdump: done](https://dumps.wikimedia.org/zhwikisource/20261001/dumpstatus.json) |
+| 压缩文件字节数 | 3430912430 | 9565159689 |
+| 官方 SHA-1 | 04d5eec3c249fdf8604b97f4435e019c60a4ec94 | b1a6e0c5ae0b55692c41010a47f7eb02e8087e2a |
+| 本地 SHA-256 | 待下载后计算 | 待下载后计算 |
+| 许可状态 | 一般文本 CC BY-SA 4.0 / GFDL；附加条件需保留 | 公有领域 / 授权作品需核对，不能全部标为公有领域 |
+
+许可依据见 [官方 dump 说明](https://dumps.wikimedia.org/legal.html)与
+[Wikimedia 使用条款](https://foundation.wikimedia.org/wiki/Policy:Terms_of_Use#7._Licensing_of_Content)。
+计划保留页面/修订 ID、原文及历史 URL、适用许可和处理改动；未确认的记录不计入正式验收数据。
+压缩文件合计约 12.10 GiB，不含正文 JSONL 与分片；下载、提取和正式规模的内存验收仍未完成。
+完整来源依据、限制与 BPE 建议预算见 [第九小步方案](../docs/m2-formal-data-plan.md)。
 
 ## 预处理约定
 
@@ -27,6 +35,8 @@
 - 固定随机种子：42。
 - 按文档划分 train/validation/test = 98%/1%/1%。
 - tokenizer 只能使用 train split 训练。
+- 正式 BPE 首版建议限 16 MiB（包含 EOS/LF），用独立固定哈希选完整文档；
+  这是待实现/测试的采样方案，现有 export_text 仍按源文件顺序取前缀，不保证来源均衡。
 - token ID 以 `uint16` 二进制分片保存，并通过 memory map 读取。
 
 本地目录 `data/raw/` 和 `data/processed/` 已由 `.gitignore` 排除。
