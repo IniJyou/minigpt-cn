@@ -65,4 +65,4 @@ git commit -m "feat: add document normalization and length filtering"
 ```
 
 add 只暂存本轮源码/依赖/测试/说明；diff 核对整个暂存区；commit 保存本地快照。
-不提交语料、缓存或根目录无关文件。下一小步再接文档级精确去重和固定 hash 划分。
+不提交语料、缓存或根目录无关文件。下一小步见 [正文精确去重与固定 hash 划分](m2-splitting-guide.md)。

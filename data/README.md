@@ -44,5 +44,21 @@
 不是字节数或 token 数；正式语料的长度阈值尚未决定。
 
 本模块不解析 Wikipedia/Wikisource dump 或 HTML，不读写文件；输入必须已经是正文字符串。
-全量处理、去重、划分、编码和来源清单仍待接入。后续清单须记录转换开关、字典版本及长度阈值；
+去重和划分函数见下一节；全量处理CLI、编码和来源清单仍待接入。后续清单须记录转换开关、字典版本及长度阈值；
 旧 pilot 数据、tokenizer 和 checkpoint 不重写。独立复核见 [清洗教程](../docs/m2-cleaning-guide.md)。
+
+## 已接入：正文精确去重与固定划分
+
+`src/minigpt_cn/data/splitting.py` 提供 `deduplicate_texts` 和 `choose_split`：
+
+- 输入是已清洗的非空正文；先过滤 clean_document 返回的 None，不隐式再次清洗。
+- 按完整正文是否相等去重，保留第一次出现的正文和输入顺序；不同标题/来源的相同正文也算重复。
+- 划分规则与原 pilot 相同：`int(SHA256(UTF8(f"{seed}\0{text}")), 16) % 100`。
+  固定 seed=42，桶0～97为train，98为valid，99为test；valid对应validation。
+- 同一正文固定属于一个集合，重排/追加输入不改变已有正文归属。不使用Python内置hash。
+- 98/1/1是桶的期望比例，不是精确文档数或token数比例；小样本允许验证/测试集为空，
+  后续全量CLI须检查并报告，不能擅自把训练文档挪入空集合。
+
+此函数层不处理JSONL记录或保存元数据；未来文件管线需保留首次记录的来源信息。
+去重输入只遍历一次，但seen仍保存全部唯一正文，未验收正式大语料的内存开销。
+详见 [去重与划分教程](../docs/m2-splitting-guide.md)。
