@@ -35,8 +35,8 @@
 - 固定随机种子：42。
 - 按文档划分 train/validation/test = 98%/1%/1%。
 - tokenizer 只能使用 train split 训练。
-- 正式 BPE 首版建议限 16 MiB（包含 EOS/LF），用独立固定哈希选完整文档；
-  这是待实现/测试的采样方案，现有 export_text 仍按源文件顺序取前缀，不保证来源均衡。
+- 正式 BPE 首版建议限 16 MiB（包含 EOS/LF）；export_text 已支持独立固定哈希选完整文档，
+  需显式启用 selection=hash。默认仍取源文件顺序的前缀；两种模式均不保证来源均衡。
 - token ID 以 `uint16` 二进制分片保存，并通过 memory map 读取。
 
 本地目录 `data/raw/` 和 `data/processed/` 已由 `.gitignore` 排除。
@@ -107,3 +107,19 @@ text字段必须是字符串；不解析XML dump、HTML或维基标记。可重�
 1MiB前缀复现旧pilot样本，不是正式16K语料规模验收；既有2048词表/权重不改，后续BPE训练必须将
 `<|endoftext|>`声明为特殊token（现有CLI默认如此）。该文本不是uint16训练数据，不能直接喂模型。
 详见 [训练文本导出教程](../docs/m2-train-text-guide.md)。
+
+## 已接入：有预算的确定性哈希采样
+
+沿用同一export_text入口，新增`--selection hash --sample-seed 42 --max-bytes 16777216`；
+hash必须给正整数字节预算，seed默认42，只改变采样，不改变train/valid/test归属。
+按SHA-256（bpe-sample-v1、NUL、十进制seed、NUL、正文）的值排序，平局按UTF-8正文字节；
+取此顺序的完整文档前缀，装不下第一篇就报错，不截断、不跳选。输入重排不改变输出文本。
+
+扫描完整train并核对来源哈希/计数/归属后，写新的train.txt与export_manifest.json；
+不读取valid/test正文，不改变旧prefix模式或清单。正文不再次清洗，仍追加EOS/LF。
+最大堆仅保留预算附近的候选，但单篇巨文档和Python对象开销不受硬RSS限制，正式规模未测。
+新清单记录采样算法版本/seed/规则，以及入选来源的篇数、码点数、字节数（含EOS/LF）；
+来源支持source字符串或source.name，缺失/其他结构为null，不从URL猜测来源或许可。
+
+pilot复核942篇/16742929字节，与独立全排序及重复导出逐字节一致；旧1MiB前缀哈希未变。
+这不是正式双来源已下载或16K tokenizer已交付；详见 [哈希采样教程](../docs/m2-hash-sampling-guide.md)。

@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 from minigpt_cn.data.prepare import _reject_nonfinite, _sha256
+from minigpt_cn.data.sampling import HASH_RULE, _HashPrefixSampler
 from minigpt_cn.data.splitting import choose_split
 
 EOS = "<|endoftext|>"
@@ -54,14 +55,32 @@ def export_train_text(
     output_dir: str | Path,
     *,
     max_bytes: int | None = None,
+    selection: str = "prefix",
+    sample_seed: int | None = None,
 ) -> dict:
-    """逐行验证完整 train split，只导出正文；可按字节预算选择完整文档前缀。
+    """验证完整 train，导出完整文档前缀；可选源顺序或独立哈希顺序。
 
-    不读取 valid/test 正文，不改变清洗规则或输入顺序。输出目录必须新建；失败可能
-    留下部分 train.txt，只有最终 export_manifest.json 写出后才是成功导出。
+    默认 prefix 保留原行为。hash 必须显式给预算，sample_seed 默认42，与划分种子独立。
+    不读取 valid/test 正文，不再次清洗。输出目录必须新建；失败可能留下部分 train.txt，
+    只有最终 export_manifest.json 写出后才是成功导出。
     """
     if max_bytes is not None and (type(max_bytes) is not int or max_bytes <= 0):
         raise ValueError("max_bytes 必须是正整数或 None")
+    if selection not in ("prefix", "hash"):
+        raise ValueError("selection 必须是 prefix 或 hash")
+    if sample_seed is not None and type(sample_seed) is not int:
+        raise TypeError("sample_seed 必须是整数或 None，不能是 bool")
+    if selection == "prefix" and sample_seed is not None:
+        raise ValueError("sample_seed 仅用于 selection=hash，不能用于源文件前缀")
+    if selection == "hash" and max_bytes is None:
+        raise ValueError("selection=hash 必须显式指定 max_bytes，不能无预算缓存文档")
+    sampler = (
+        _HashPrefixSampler(
+            max_bytes, 42 if sample_seed is None else sample_seed, len(SUFFIX.encode())
+        )
+        if selection == "hash"
+        else None
+    )
     manifest_path = Path(manifest_path).resolve()
     output = Path(output_dir)
     if output.exists() or output.is_symlink():
@@ -79,6 +98,7 @@ def export_train_text(
     documents = characters = exported = exported_characters = written_bytes = 0
     accepting = True
     digest = hashlib.sha256()
+    source_stats: dict[str | None, dict] = {}
     text_path = output / "train.txt"
     with source.open("rb") as fin, text_path.open("xb") as fout:
         for line_number, line in enumerate(fin, start=1):
@@ -100,7 +120,16 @@ def export_train_text(
                 # 与原 pilot 相同：正文不再清洗，仅追加一个 EOS 和 LF。
                 # 二进制写 UTF-8，避免 Windows 自动把 LF 改成 CRLF。
                 piece = (text + SUFFIX).encode("utf-8")
-                if accepting and (max_bytes is None or written_bytes + len(piece) <= max_bytes):
+                if sampler is not None:
+                    # 来源只用于统计，不影响排序。支持 source 字符串或 source.name；
+                    # 其他结构/缺失统一记为 null，不从标题、URL 猜测站点或许可。
+                    label = record.get("source")
+                    if isinstance(label, dict):
+                        label = label.get("name")
+                    if not isinstance(label, str) or not label.strip():
+                        label = None
+                    sampler.add(text, label)
+                elif accepting and (max_bytes is None or written_bytes + len(piece) <= max_bytes):
                     fout.write(piece)
                     exported += 1
                     exported_characters += len(text)
@@ -111,6 +140,25 @@ def export_train_text(
                     accepting = False
             except (ValueError, TypeError) as error:
                 raise ValueError(f"{source}:{line_number}: {error}") from error
+        if sampler is not None:
+            # 先验证完整输入再写样本，不能只校验入选文档而漏掉文件后面的坏数据。
+            if digest.hexdigest() != info["sha256"]:
+                raise RuntimeError("导出期间 train.jsonl 发生变化")
+            if documents != info["documents"] or characters != info["characters"]:
+                raise ValueError("train 的文档数或正文字符数与清单不一致")
+            for candidate in sampler.ordered():
+                if written_bytes + candidate.bytes > max_bytes:
+                    break  # 不写越界文档，不截断 UTF-8，也不跳过它去填更短的文档。
+                fout.write(candidate.key[1] + SUFFIX.encode("utf-8"))
+                exported += 1
+                exported_characters += candidate.characters
+                written_bytes += candidate.bytes
+                stats = source_stats.setdefault(
+                    candidate.source, {"documents": 0, "characters": 0, "bytes": 0}
+                )
+                stats["documents"] += 1
+                stats["characters"] += candidate.characters
+                stats["bytes"] += candidate.bytes  # 包含该来源入选文档的 EOS/LF。
     if digest.hexdigest() != info["sha256"] or _sha256(source) != info["sha256"]:
         raise RuntimeError("导出期间 train.jsonl 发生变化")
     if _sha256(manifest_path) != manifest_hash:
@@ -136,6 +184,17 @@ def export_train_text(
             "sha256": _sha256(text_path),
         },
     }
+    if sampler is not None:
+        report["selection"].update(
+            strategy="whole_document_hash_prefix",
+            algorithm_version=1,
+            sample_seed=sampler.seed,
+            hash_rule=HASH_RULE,
+        )
+        report["output"]["sources"] = [
+            {"source": label, **source_stats[label]}
+            for label in sorted(source_stats, key=lambda label: (label is not None, label or ""))
+        ]
     # 新的导出清单独立保存，不修改数据处理清单或旧 BPE 样本。
     with (output / "export_manifest.json").open("x", encoding="utf-8", newline="\n") as file:
         file.write(json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + "\n")
@@ -149,9 +208,22 @@ def main(argv=None):
     )
     parser.add_argument("--output-dir", type=Path, required=True, help="新的文本输出目录，不覆盖")
     parser.add_argument("--max-bytes", type=int, help="含 EOS/LF 的字节上限；不传则导出全部 train")
+    parser.add_argument(
+        "--selection",
+        choices=("prefix", "hash"),
+        default="prefix",
+        help="prefix 按源文件顺序（默认）；hash 按固定哈希顺序，必须给 --max-bytes",
+    )
+    parser.add_argument("--sample-seed", type=int, help="仅用于 hash 的采样种子，默认42")
     args = parser.parse_args(argv)
     try:
-        report = export_train_text(args.manifest, args.output_dir, max_bytes=args.max_bytes)
+        report = export_train_text(
+            args.manifest,
+            args.output_dir,
+            max_bytes=args.max_bytes,
+            selection=args.selection,
+            sample_seed=args.sample_seed,
+        )
         print(
             json.dumps(
                 {"output_dir": str(args.output_dir.resolve()), **report},

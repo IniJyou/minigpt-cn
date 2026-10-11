@@ -270,6 +270,33 @@
   本轮未运行pytest；不把前次通过数算成本次重跑，不下载/保存词表/编码/训练。
   未改作业仓库/环境/学习笔记，未执行Git写操作，根目录无关文件保留，停在方案复核点。
 
+## 2026-10-11：M2 第十小步——有预算的确定性哈希采样
+
+- 用户已提交方案，HEAD=777e6c2，仍在m2/tokenizer-data；本轮实现采样，不下载正式数据或训练模型。
+- 新data/sampling.py使用独立域SHA-256和UTF-8正文平局排序、候选最大堆；每次添加后仅保留
+  累计字节首次覆盖预算的最短哈希前缀，末篇越界时不写。预算包含EOS/LF，不截断、不跳选。
+  候选正文不缓存全量，但有Python对象/单篇文档开销；上游prepare的seen和正式规模内存仍待验收。
+- export_text新增selection=hash、sample_seed默认42；hash必须显式给正整数max_bytes，
+  prefix拒绝sample_seed，默认prefix的输出顺序/字节和清单字段不变，不改原处理/划分规则。
+  校验完整train的哈希/计数/归属和EOS字面量，不读取valid/test正文；结束时再核对来源版本。
+- hash清单增加算法版本/seed/规则及入选来源统计；source字符串或source.name可识别，
+  其他/缺失为null，不猜测来源/许可，字节数包含EOS/LF，不声称来源均衡。
+- 新增43项测试：独立排序/预算等号、10个随机seed逐次堆不变量、输入重排、采样seed、
+  UTF-8平局、首篇超预算/不可跳选、全train错误/计数、输入变化、防覆盖、CLI与旧模式兼容。
+  Windows聚焦67 passed、2 skipped；完整CPU回归385 passed、9 skipped。
+  WSL完整CPU回归389 passed、5 skipped。Windows Ruff通过；跳过含CUDA和Windows符号链接权限。
+- 真实pilot来源train共986篇，SHA-256=1250226874b95e47ef9f900140a83c315e420886558902cb23c4ca61346b3699。
+  16MiB预算/采样seed42输出942篇、6244484正文码点、16742929字节；
+  SHA-256=5a322b2d46ceb5081f853ac3c4fb1ba5dca0ca19c79756a87485a66c13567f1f。
+  所有入选来源为null，符合该pilot缺少可识别source元数据的事实，不能充当正式来源验收。
+- 单次WSL CPU采样约1.5709秒，截至首次导出进程峰值RSS43.625MiB；计时不含后续独立排序。
+  不把采样速度当作BPE训练速度，不外推正式大语料。独立全排序和重复导出逐字节一致。
+  原默认1MiB前缀仍50篇/1010020字节，SHA-256=3c7c547d9a705e23ebb23f23960b59cd31adb1d1de5fe405269f13d9a005fcba。
+- 三份split/处理清单、旧词表/BPE文本/pilot权重、模型配置/BPE源码等10个受检文件哈希前后不变。
+  助手忽略产物仅位于m2_verification/bpe_hash16m_v1、bpe_hash16m_repeat_v1、bpe_prefix_compat_v1；
+  用户教程使用独立m2_user_bpe_hash16m。未改作业/环境/学习笔记或执行Git写操作，根目录无关文件保留。
+  新docs/m2-hash-sampling-guide.md提供测试、CLI、独立排序PASS与提交命令；停在模块复核点。
+
 ## 实验模板
 
 ### 基本信息
