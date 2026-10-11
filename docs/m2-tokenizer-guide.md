@@ -94,3 +94,5 @@ git commit -m "feat: add BPE training and tokenizer CLI"
 add暂存本模块源码/测试/文档，diff核对全部暂存项，commit保存本地快照。
 第一小步若尚未commit，也会包含在此次提交里；助手不清空暂存区、不执行Git写操作。
 不提交data/processed产物，不使用git add -f，不暂存根目录的无关文件。
+
+本模块复核通过后，下一小步见 [单篇文档清洗教程](m2-cleaning-guide.md)。
