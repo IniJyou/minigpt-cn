@@ -1,4 +1,5 @@
-"""模型结构子包。
+"""已迁移的 Transformer 与逐层推理 KV Cache。"""
 
-后续按学习顺序加入 Attention、RoPE、RMSNorm、SwiGLU 和完整 MiniGPT。
-"""
+from minigpt_cn.model.transformer import KVCache, MiniGPT, ModelOutput, TransformerBlock
+
+__all__ = ["MiniGPT", "ModelOutput", "TransformerBlock", "KVCache"]

@@ -4,8 +4,13 @@
 Self-Attention、RoPE、RMSNorm、SwiGLU、训练循环和 KV Cache；随后基于支持中文的
 0.6B 基础模型进行 LoRA 指令微调，构建多轮对话服务并评估微调效果。
 
-> 当前状态：M0 仓库骨架和配置系统已经就绪。Transformer、正式预训练、LoRA 微调和
-> 对话服务均尚未实现。下文描述的是项目计划，不代表已经完成的成果。
+> 当前状态：已将通过中文 pilot 验收的 Transformer 和 BPE 编解码迁入项目。
+> 同一份 pilot 权重在 CPU/FP32、CUDA/BF16 下的完整 logits 和验证 loss 均与作业实现
+> 完全一致。项目训练/完整评估/中文生成 CLI、断点恢复与 KV Cache 已接入；
+> 缓存/无缓存 greedy 一致性已验收，正式 33M 预训练和 LoRA 服务仍待实现。
+> 迁移验收见 [docs/pilot-migration.md](docs/pilot-migration.md)。
+> 配置化 checkpoint 已接入；旧 pilot 可显式导入为自带模型配置的推理文件，
+> 新训练 checkpoint 支持优化器、随机状态和采样状态恢复，见 [步骤2教程](docs/step2-guide.md)。
 
 ## English summary
 
@@ -13,7 +18,10 @@ MiniGPT-CN plans to implement a ~33M Chinese Decoder-only Transformer from scrat
 then fine-tune a separate 0.6B base model with LoRA for multi-turn chat. The project
 focuses on readable implementations, reproducible training, and controlled
 evaluation of instruction following, repetition, and inference performance.
-Currently, only the repository scaffold and configuration system are implemented.
+The Transformer and BPE codec have been integrated and verified against the original
+Chinese pilot checkpoint. Config-driven training, full evaluation, and checkpoint resume are
+available, along with a Chinese generation CLI and an optional KV Cache. Sliding the
+context window rebuilds the cache to preserve the uncached generation semantics.
 
 ## 项目目标
 
@@ -97,10 +105,10 @@ adapter 挂载和合并权重的方式；验证 loss、训练 loss 或少数展�
 | Milestone | 范围 | 当前状态 |
 | --- | --- | --- |
 | M0 Repository Bootstrap | 包骨架、配置、测试、CPU CI 和文档 | 已完成基础搭建 |
-| M1 Transformer Core | Attention、RMSNorm、RoPE、SwiGLU、完整模型与组件测试 | 待实现 |
-| M2 Tokenizer and Training | BPE、数据管线、训练、checkpoint 和恢复 | 待实现 |
+| M1 Transformer Core | Attention、RMSNorm、RoPE、SwiGLU、完整模型与组件测试 | 核心迁移与 KV Cache 已通过本地验收；Git 提交/合并由用户执行 |
+| M2 Tokenizer and Training | BPE、数据管线、训练、checkpoint 和恢复 | BPE 编解码、已有 token 数据读取、训练/完整评估与恢复已接入；正式数据管线/BPE 训练待接入 |
 | M3 33M Pretraining | 本地验证、云端预训练、训练曲线和消融 | 待实现 |
-| M4 Portfolio Release | 33M 生成工具、演示、模型卡、可复现发布 | 待实现 |
+| M4 Portfolio Release | 33M 生成工具、演示、模型卡、可复现发布 | 基础生成 CLI 已接入；正式模型、演示与发布待完成 |
 | M5 LoRA Chat and Evaluation | 0.6B 指令微调、多轮服务与受控评测 | 新增计划，GitHub milestone 待创建 |
 
 先完成 M1～M4，再推进 M5。原十周安排对应 33M 主线，新增微调与服务需要额外时间，
@@ -175,7 +183,11 @@ tests/                  CPU 单元测试
 
 ## 已知限制
 
-- 当前仓库尚未实现模型和训练功能。
+- 模型、训练/完整评估/生成 CLI、恢复与可选 KV Cache 已接入，教程见步骤2的F段。
+- 生成目前单条、非流式；旧 pilot 仍会重复/不连贯，可能生成非法 UTF-8 字节。缓存不改善文本质量。
+- 当前缓存策略为 `rebuild_on_slide`：满窗口后每次重建，保持原窗口裁剪语义，但此时没有增量加速。
+- 新训练默认从随机权重开始；旧 pilot 导入文件不能作为精确续训入口。
+- 16K tokenizer 尚未训练，正式 33M 配置尚未做资源基准；2048 pilot 只用于迁移对照。
 - 33M 预训练模型用于中文文本生成实验；0.6B LoRA 阶段的对话能力须通过独立评测验证。
 - 两个模型都可能产生重复、幻觉、不完整句子以及训练数据中存在的偏差。
 - 多轮服务使用会话上下文，不提供长期记忆；微调不保证事实准确性或复杂推理能力。

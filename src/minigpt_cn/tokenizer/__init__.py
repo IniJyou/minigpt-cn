@@ -1,4 +1,5 @@
-"""Tokenizer 子包。
+"""已迁移的 byte-level BPE 编解码与 pilot JSON 保存加载。"""
 
-第 4 周将在这里实现 byte-level BPE 的训练、编码、解码和序列化。
-"""
+from minigpt_cn.tokenizer.bpe import BPETokenizer
+
+__all__ = ["BPETokenizer"]
