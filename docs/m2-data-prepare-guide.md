@@ -105,4 +105,4 @@ git commit -m "feat: add JSONL data preparation CLI and manifest"
 
 add暂存本轮源码/测试/说明；diff核对整个暂存区；commit保存本地快照。
 不提交data/processed产物或根目录无关文件，助手不执行Git写操作。
-本轮验收后再接仅train的BPE训练文本导出，不同时训练正式16K词表或编码token。
+本轮验收后下一小步见 [仅train的BPE训练文本导出](m2-train-text-guide.md)，不同时训练正式16K词表或编码token。

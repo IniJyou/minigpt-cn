@@ -78,4 +78,22 @@ text字段必须是字符串；不解析XML dump、HTML或维基标记。可重�
 
 这是逐行文件入口，不是目录级事务或正式大语料资源验收；seen仍保存全部唯一正文。
 处理清单追踪本地文件与规则，不自动核实下载来源/版本/许可；正式下载仍需填写本页来源表。
-未导出BPE训练纯文本或token二进制，不改旧pilot文件，详见 [JSONL处理教程](../docs/m2-data-prepare-guide.md)。
+此入口不导出纯文本或token二进制，不改旧pilot文件，详见 [JSONL处理教程](../docs/m2-data-prepare-guide.md)。
+
+## 已接入：仅 train 的 BPE 训练文本导出
+
+`python -m minigpt_cn.data.export_text` 接受已验收的处理清单，固定读取其同目录的train.jsonl，
+不开放split选项，不读取valid/test正文，不跟随train文件符号链接或允许清单重定向来源文件名。
+导出前核对train字节数/SHA-256，逐行核对归属与完整文档/字符计数，结束时再次检查来源版本。
+
+- 输出新目录中的train.txt和export_manifest.json，不覆盖旧文件，也不改原处理清单。
+- 只写原text正文，文档顺序不变；沿用原pilot边界：`正文 + <|endoftext|> + LF`。
+  不再次清洗，不写标题/URL。正文已有保留EOS字面量时拒绝导出，不悄悄替换或过滤。
+- 默认导出全train；可选`--max-bytes`只取容得下的完整文档前缀，预算包括EOS/LF。
+  不截断文档/UTF-8，不跳过超预算文档再挑后面的小文档；即使限量，仍校验整份train。
+- 导出清单记录来源处理清单/训练文件哈希、抽样规则、边界规则、实际篇数/正文码点数/字节数/文本哈希。
+  失败无完整导出清单的文本不可用于BPE，需换新目录重跑。清单不证明来源许可或代表性。
+
+1MiB前缀复现旧pilot样本，不是正式16K语料规模验收；既有2048词表/权重不改，后续BPE训练必须将
+`<|endoftext|>`声明为特殊token（现有CLI默认如此）。该文本不是uint16训练数据，不能直接喂模型。
+详见 [训练文本导出教程](../docs/m2-train-text-guide.md)。

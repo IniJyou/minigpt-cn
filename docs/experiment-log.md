@@ -176,6 +176,27 @@
   未改旧数据/词表/权重、作业环境或学习笔记，未执行Git写操作，无关文件保留。
 - 停在本模块验收点，后续再接仅train的BPE训练文本导出，不直接开始正式16K或token编码。
 
+## 2026-10-11：M2 第六小步——仅 train 的 BPE 文本导出
+
+- 用户已验收并提交JSONL入口；本轮新增data/export_text.py，不改既有清洗/划分/BPE算法，不训练tokenizer或编码。
+- 从版本1处理清单固定读取同目录普通train.jsonl；校验格式、路径、SHA-256/字节数、完整文档/字符计数和逐篇train归属。
+  测试通过禁止打开valid/test文件确认正文不会混入BPE；导出前/读取时/结束时核对来源版本。
+- 正文不再清洗，按原pilot正文+EOS+LF拼接UTF-8；正文含保留EOS字面量时明确拒绝，来源/标题不写入文本。
+- 可选max_bytes按EOS/LF计入预算，仅取完整文档前缀，不截断或跳过大文档挑后文；限量时仍校验完整train。
+- 输出新目录train.txt与export_manifest.json，记录处理清单/训练文件哈希、选择/边界规则及实际输出统计；不覆盖，不改原清单。
+  失败可能留下部分文本，没有完整导出清单不能视为成功；不宣称许可、前缀代表性或正式BPE资源已经验证。
+- 新增26项测试：WSL26 passed；Windows24 passed、2 skipped。覆盖全量/限量、预算包含边界、
+  来源计数/版本变化、路径重定向、错split、EOS字面量、防覆盖及符号链接、独立进程入口。
+- 完整回归：Windows313 passed、4 skipped；WSL CPU312 passed、5 skipped；Ruff通过。
+- 真实项目清单导出：1MiB预算得到50篇、382621正文码点、1010020字节；与作业bpe_train.txt逐字节一致，
+  SHA-256为3c7c547d9a705e23ebb23f23960b59cd31adb1d1de5fe405269f13d9a005fcba。
+- 全量导出986篇、6580357正文码点、17677160字节，与项目train逐篇正文+EOS/LF拼接完全一致，
+  SHA-256为0e116f4eeb82d56713dadceddc1d50b51f2917a26656ac33762a64010744ed7c。
+- 忽略产物data/processed/m2_verification/bpe_text_prefix1m与bpe_text_full；用户教程用独立m2_user_bpe_text_1m。
+  原项目清单/三份split和旧作业BPE样本SHA-256前后未变；未改作业环境、词表/权重、学习笔记或执行Git写操作。
+- 新教程docs/m2-train-text-guide.md提供26项聚焦测试、1MiB CLI与完整来源/边界/旧样本校验；停在用户验收点。
+  后续先讨论训练规模/性能，17.7MB文本导出不等于正式16K训练可用性验收。
+
 ## 实验模板
 
 ### 基本信息
