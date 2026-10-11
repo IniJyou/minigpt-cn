@@ -106,7 +106,7 @@ adapter 挂载和合并权重的方式；验证 loss、训练 loss 或少数展�
 | --- | --- | --- |
 | M0 Repository Bootstrap | 包骨架、配置、测试、CPU CI 和文档 | 已完成基础搭建 |
 | M1 Transformer Core | Attention、RMSNorm、RoPE、SwiGLU、完整模型与组件测试 | 核心迁移与 KV Cache 已通过本地验收；Git 提交/合并由用户执行 |
-| M2 Tokenizer and Training | BPE、数据管线、训练、checkpoint 和恢复 | BPE 基础训练/训练 CLI 与编解码、JSONL清洗/去重/划分及仅train文本导出、已有 token 数据读取、模型训练/完整评估与恢复已接入；正式数据管线与16K词表待完成 |
+| M2 Tokenizer and Training | BPE、数据管线、训练、checkpoint 和恢复 | 增量 BPE 训练/训练 CLI 与编解码、JSONL清洗/去重/划分及仅train文本导出、已有 token 数据读取、模型训练/完整评估与恢复已接入；正式数据管线与16K词表待完成 |
 | M3 33M Pretraining | 本地验证、云端预训练、训练曲线和消融 | 待实现 |
 | M4 Portfolio Release | 33M 生成工具、演示、模型卡、可复现发布 | 基础生成 CLI 已接入；正式模型、演示与发布待完成 |
 | M5 LoRA Chat and Evaluation | 0.6B 指令微调、多轮服务与受控评测 | 新增计划，GitHub milestone 待创建 |
@@ -189,6 +189,7 @@ tests/                  CPU 单元测试
 - 新训练默认从随机权重开始；旧 pilot 导入文件不能作为精确续训入口。
 - 16K tokenizer 尚未训练，正式 33M 配置尚未做资源基准；2048 pilot 只用于迁移对照。
 - 小语料 tokenizer 训练 CLI 已接入，见 [M2逐步教程](docs/m2-tokenizer-guide.md)；正式16K训练的速度/内存仍待测。
+- BPE 已改为倒排索引、邻边增量计数与优先队列，保留全扫描参考实现；见 [优化与复核教程](docs/m2-bpe-optimization-guide.md)。仍整读文本，以额外内存换速度，需先确定正式训练样本预算。
 - JSONL处理和仅train的BPE文本导出已接入，见 [数据处理教程](docs/m2-data-prepare-guide.md)与[文本导出教程](docs/m2-train-text-guide.md)；正式dump解析和token编码仍待完成。
 - 33M 预训练模型用于中文文本生成实验；0.6B LoRA 阶段的对话能力须通过独立评测验证。
 - 两个模型都可能产生重复、幻觉、不完整句子以及训练数据中存在的偏差。
