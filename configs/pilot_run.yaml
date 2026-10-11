@@ -1,0 +1,25 @@
+# 项目阶段D的短运行配置，不是原 pilot 5000步实验的训练配置。
+# 引用唯一的模型配置，避免训练/评估/生成各自手写层数、头数和维度。
+model_config: pilot_3m.yaml
+training:
+  batch_size: 8
+  max_steps: 100
+  learning_rate: 0.0003
+  min_learning_rate: 0.00003
+  warmup_steps: 5
+  lr_decay_steps: 100
+  betas: [0.9, 0.95]
+  eps: 0.00000001
+  weight_decay: 0.1
+  max_grad_norm: 1.0
+  device: cuda
+  precision: bfloat16
+  seed: 42
+  log_interval: 10
+  eval_interval: 50
+  save_interval: 50
+data:
+  # 相对路径从本 YAML 所在的 configs/ 目录出发，指向原作业样本，不复制或覆盖。
+  train_path: ../../cs336-assignment1-basics/data/processed/train.bin
+  valid_path: ../../cs336-assignment1-basics/data/processed/valid.bin
+  tokenizer_path: ../../cs336-assignment1-basics/data/processed/tokenizer_2048.json

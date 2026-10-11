@@ -1,9 +1,10 @@
 """项目配置的定义、校验和 YAML 加载逻辑。
 
 训练任务通常耗时且昂贵，因此应在创建模型之前尽早发现配置错误。
-本模块目前只定义模型结构配置；训练和数据配置会在对应阶段加入。
+模型、训练和数据配置集中在此；checkpoint 保存这些配置，评估/生成无需再手写结构。
 """
 
+import math
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -35,6 +36,10 @@ class ModelConfig:
     tie_embeddings: bool = True
     dropout: float = 0.0
     bias: bool = False
+    # pilot checkpoint 不含这些值，必须显式记录，不能仅靠权重形状推断。
+    rope_theta: float = 10000.0
+    rms_norm_eps: float = 1e-5
+    embedding_init_std: float = 0.02
 
     def __post_init__(self) -> None:
         """在配置创建后立即检查不变量。"""
@@ -77,12 +82,23 @@ class ModelConfig:
             raise ValueError(f"unsupported norm: {self.norm}")
 
         if self.position_encoding not in {"rope", "learned"}:
-            raise ValueError(
-                f"unsupported position encoding: {self.position_encoding}"
-            )
+            raise ValueError(f"unsupported position encoding: {self.position_encoding}")
 
         if self.activation != "swiglu":
             raise ValueError(f"unsupported activation: {self.activation}")
+
+        if self.position_encoding == "rope" and (self.d_model // self.n_heads) % 2:
+            raise ValueError("RoPE head_dim must be even")
+
+        for name in ("rope_theta", "rms_norm_eps", "embedding_init_std"):
+            value = getattr(self, name)
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(value)
+                or value <= 0
+            ):
+                raise ValueError(f"{name} must be finite and positive")
 
 
 def load_model_config(path: str | Path) -> ModelConfig:
@@ -120,3 +136,124 @@ def load_model_config(path: str | Path) -> ModelConfig:
         # dataclass 在缺少必填字段或出现未知字段时抛出 TypeError；
         # 对调用者统一转换为“配置错误”更容易理解。
         raise ValueError(f"invalid model configuration: {error}") from error
+
+
+@dataclass(frozen=True)
+class TrainingConfig:
+    """训练运行配置。训练终点与余弦调度终点分开，续训不会隐式改变学习率曲线。"""
+
+    batch_size: int = 8
+    max_steps: int = 100
+    learning_rate: float = 3e-4
+    min_learning_rate: float = 3e-5
+    warmup_steps: int = 5
+    lr_decay_steps: int = 100
+    betas: tuple[float, float] = (0.9, 0.95)
+    eps: float = 1e-8
+    weight_decay: float = 0.1
+    max_grad_norm: float = 1.0
+    device: str = "cuda"
+    precision: str = "bfloat16"
+    seed: int = 42
+    log_interval: int = 10
+    eval_interval: int = 50
+    save_interval: int = 50
+
+    def __post_init__(self):
+        for name in (
+            "batch_size",
+            "max_steps",
+            "lr_decay_steps",
+            "log_interval",
+            "eval_interval",
+            "save_interval",
+        ):
+            value = getattr(self, name)
+            if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+                raise ValueError(f"{name} must be a positive integer")
+        for name in ("warmup_steps", "seed"):
+            value = getattr(self, name)
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                raise ValueError(f"{name} must be a nonnegative integer")
+        if self.warmup_steps >= self.lr_decay_steps:
+            raise ValueError("warmup_steps must be less than lr_decay_steps")
+        if self.seed >= 2**32:
+            raise ValueError("seed must be less than 2**32 for NumPy compatibility")
+        for name in ("learning_rate", "min_learning_rate", "eps", "weight_decay", "max_grad_norm"):
+            value = getattr(self, name)
+            if (
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(value)
+            ):
+                raise ValueError(f"{name} must be finite")
+            if value < 0 or (name in {"learning_rate", "eps", "max_grad_norm"} and value == 0):
+                raise ValueError(f"{name} is outside its valid range")
+        if self.min_learning_rate > self.learning_rate:
+            raise ValueError("min_learning_rate must not exceed learning_rate")
+        if not isinstance(self.betas, (list, tuple)) or len(self.betas) != 2:
+            raise ValueError("betas must contain two values")
+        if any(
+            isinstance(beta, bool) or not isinstance(beta, (int, float)) or not 0 <= beta < 1
+            for beta in self.betas
+        ):
+            raise ValueError("betas must lie in [0, 1)")
+        # YAML 的序列读取为 list；转成 tuple，保证 frozen 配置内部也不可变。
+        object.__setattr__(self, "betas", tuple(self.betas))
+        if self.device not in {"cpu", "cuda"}:
+            raise ValueError("device must be cpu or cuda")
+        if self.precision not in {"float32", "bfloat16"}:
+            raise ValueError("precision must be float32 or bfloat16; pure FP16 is not supported")
+
+
+@dataclass(frozen=True)
+class DataConfig:
+    """无文件头 uint16 数据路径与配套 tokenizer；配置加载不读取大语料。"""
+
+    train_path: str
+    valid_path: str
+    tokenizer_path: str
+
+    def __post_init__(self):
+        for name in ("train_path", "valid_path", "tokenizer_path"):
+            value = getattr(self, name)
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError(f"{name} must be a nonempty path string")
+
+
+@dataclass(frozen=True)
+class RunConfig:
+    model: ModelConfig
+    training: TrainingConfig
+    data: DataConfig
+
+
+def load_run_config(path: str | Path) -> RunConfig:
+    """加载完整运行配置；所有相对路径相对于 YAML 文件目录，而不是终端当前目录。"""
+    path = Path(path).resolve()
+    try:
+        raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except yaml.YAMLError as error:
+        raise ValueError(f"invalid YAML in {path}: {error}") from error
+    if not isinstance(raw, dict):
+        raise ValueError("configuration root must be a mapping")
+    if set(raw) - {"model", "model_config", "training", "data"}:
+        raise ValueError("unknown run configuration section")
+    if ("model" in raw) == ("model_config" in raw):
+        raise ValueError("provide exactly one of model or model_config")
+    try:
+        if "model_config" in raw:
+            if not isinstance(raw["model_config"], str):
+                raise ValueError("model_config must be a path string")
+            model = load_model_config(path.parent / raw["model_config"])
+        else:
+            model = ModelConfig(**raw["model"])
+        training = TrainingConfig(**raw.get("training", {}))
+        data = DataConfig(**raw["data"])
+    except (TypeError, KeyError) as error:
+        raise ValueError(f"invalid run configuration: {error}") from error
+    resolved = {
+        name: str((path.parent / getattr(data, name)).resolve())
+        for name in ("train_path", "valid_path", "tokenizer_path")
+    }
+    return RunConfig(model, training, DataConfig(**resolved))

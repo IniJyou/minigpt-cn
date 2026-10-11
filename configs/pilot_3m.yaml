@@ -1,0 +1,17 @@
+# 原中文 pilot 的模型结构；只用于加载旧权重和迁移验收，不是正式 33M 配置。
+model:
+  vocab_size: 2048
+  context_length: 256
+  n_layers: 4
+  n_heads: 8
+  d_model: 256
+  d_ff: 704
+  norm: rmsnorm
+  position_encoding: rope
+  activation: swiglu
+  tie_embeddings: true
+  dropout: 0.0
+  bias: false
+  rope_theta: 10000.0
+  rms_norm_eps: 0.00001
+  embedding_init_std: 0.02
