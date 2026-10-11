@@ -1,4 +1,4 @@
-"""迁移已训练的 byte-level BPE 编解码及 pilot JSON 格式，不重新训练词表。"""
+"""Byte-level BPE 编解码及 pilot JSON 格式；训练函数在 train_bpe.py。"""
 
 import json
 from collections.abc import Iterable, Iterator
@@ -117,14 +117,16 @@ class BPETokenizer:
                 return 0
         return cut
 
-    def save(self, path: str | Path):
+    def save(self, path: str | Path, *, overwrite: bool = True):
         # bytes 以 hex 保存，避免 UTF-8 解码损坏词表；兼容原 tokenizer_2048.json。
         payload = {
             "special_tokens": self.special_tokens,
             "vocab": {str(index): token.hex() for index, token in self.vocab.items()},
             "merges": [[a.hex(), b.hex()] for a, b in self.merges],
         }
-        Path(path).write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        # 保留原API默认行为；训练CLI显式用overwrite=False，x模式防止覆盖已有文件。
+        with Path(path).open("w" if overwrite else "x", encoding="utf-8") as file:
+            file.write(json.dumps(payload, ensure_ascii=False, indent=2))
 
     @classmethod
     def load(cls, path: str | Path):

@@ -90,6 +90,39 @@
 - 用户逐步命令见 `docs/step2-guide.md` F段。未执行Git写操作，未改作业源码/学习笔记/原权重。
 - 下一步由用户复核F，再讨论正式16K tokenizer及33M/512的资源与稳定性试跑；未开始正式训练。
 
+## 2026-10-11：M2 第一小步——BPE 训练函数
+
+- 分支：`m2/tokenizer-data`；只接入基础函数，不接入CLI、数据处理或正式16K训练。
+- 原作业来源：`cs336_basics/tokenizer.py::train_bpe`；项目文件：
+  `src/minigpt_cn/tokenizer/train_bpe.py`，公开导入 `from minigpt_cn.tokenizer import train_bpe`。
+- 保留按词块频次加权的pair统计、字节平局规则、非重叠替换、特殊token隔离和merge顺序。
+  复用编码器PAT，省掉中间chunks列表，补输入校验与中文注释；输入语料只读。
+- 新增22个独立小语料用例；与原编解码测试合计31 passed，测试不依赖作业仓库。
+- 单独读取作业 `corpus.en`：目标257/260/500，实际词表与完整有序merges均逐项一致。
+- Windows完整回归203 passed；独立WSL CPU-only 198 passed、5 skipped；两环境Ruff通过。
+- 词表目标是上限，语料不足时提前停止、不填充；模型必须匹配实际词表大小。
+- 限制：仍整读文本、每轮全量统计pair；没有正式16K语料的时间/内存基准，不宣称可扩展性已验收。
+- 用户复核本模块后再接小语料训练/保存CLI；作业源码、学习笔记、现有词表/权重未修改，未执行Git写操作。
+
+## 2026-10-11：M2 第二小步——小语料训练与保存 CLI
+
+- 第一小步已由用户复核；本轮只新增 `python -m minigpt_cn.tokenizer.train`，不接数据处理或正式16K训练。
+- 显式输入/目标/输出；只接受UTF-8纯文本，不自动提取JSONL，不读取token二进制。
+- 默认EOS为256，可显式声明特殊token；目标是上限，不填充，报告实际词表、merge数和输入/输出SHA-256。
+- 保存后核对词表/merge顺序/特殊token一致，并检查中文/emoji往返；失败不报告成功。
+- save增加兼容的overwrite参数；CLI用独占创建防覆盖，包括并发同名文件与悬空符号链接。
+- 新增17个CLI/保存用例；BPE相关共48项，Windows无符号链接权限时47 passed、1 skipped。
+- 完整回归：Windows219 passed、1 skipped；独立WSL CPU-only215 passed、5 skipped；两环境Ruff通过。
+- 真实WSL演练：读取原pilot训练文本1,010,020 bytes，目标/实际300、merge43、EOS256，
+  reload_verified与round_trip_verified均为true；训练函数耗时7.6844秒，仅单次smoke，不是正式性能基准。
+- 输入SHA-256：`3c7c547d9a705e23ebb23f23960b59cd31adb1d1de5fe405269f13d9a005fcba`。
+  原2048 tokenizer哈希仍为 `22089eb3002b9c24509c5bc37cef710994c9ace095f600bb26a71877b6e1ea12`，输入未修改。
+- 忽略产物：`data/processed/m2_verification/tokenizer_cli300.json`，
+  SHA-256 `a369cf5f15f4fc203189c0747eb430eb8f89f8ab1427905c28319662a3d68392`。
+- 新教程 `docs/m2-tokenizer-guide.md` 提供用户独立输出名与检查步骤；300词表不能替换旧2048或正式16K词表。
+- 仍整读/逐轮扫描，未自动保存正式数据清单/训练配置；未下载语料、改模型配置/作业源码/学习笔记或执行Git写操作。
+- 停在本模块用户验收点，下一轮再讨论清洗和划分的独立小模块。
+
 ## 实验模板
 
 ### 基本信息
