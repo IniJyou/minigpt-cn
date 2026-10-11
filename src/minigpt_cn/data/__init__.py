@@ -1,6 +1,6 @@
 """数据处理子包。
 
-已有清洗、正文精确去重、hash 划分与 token 读取；全量处理和编码管线后续逐步接入。
+已有清洗、去重、hash 划分、JSONL 处理入口与 token 读取；dump 解析和编码管线后续接入。
 """
 
 from .cleaning import clean_document, normalize_text

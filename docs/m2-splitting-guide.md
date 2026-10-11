@@ -80,4 +80,4 @@ git commit -m "feat: add exact text deduplication and deterministic splits"
 
 add只暂存本轮源码/测试/文档；diff检查整个暂存区；commit保存本地快照。
 不要暂存根目录无关文件或语料；助手不执行Git写操作。
-下一小步再将这些函数接入独立的JSONL处理入口，不同时完成正式数据下载与token编码。
+下一小步见 [JSONL处理入口与清单教程](m2-data-prepare-guide.md)，不同时完成正式数据下载与token编码。
