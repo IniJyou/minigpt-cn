@@ -115,3 +115,4 @@ git commit -m "perf: train BPE with incremental counts and pair index"
 add仅暂存本轮源码/测试/文档；diff核对整个暂存区；commit保存本地快照。
 不提交数据/词表/日志，也不暂存根目录无关文件。不自动push或修改GitHub。
 本轮验收后再确定正式BPE的train采样预算和16K资源测试，不同时完成下载、编码或模型训练。
+优化已由用户提交为319a8c1；下一小步见 [16K资源探测教程](m2-bpe-16k-probe-guide.md)。

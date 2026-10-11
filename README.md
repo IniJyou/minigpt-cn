@@ -187,9 +187,10 @@ tests/                  CPU 单元测试
 - 生成目前单条、非流式；旧 pilot 仍会重复/不连贯，可能生成非法 UTF-8 字节。缓存不改善文本质量。
 - 当前缓存策略为 `rebuild_on_slide`：满窗口后每次重建，保持原窗口裁剪语义，但此时没有增量加速。
 - 新训练默认从随机权重开始；旧 pilot 导入文件不能作为精确续训入口。
-- 16K tokenizer 尚未训练，正式 33M 配置尚未做资源基准；2048 pilot 只用于迁移对照。
+- 正式16K tokenizer 尚未产出，正式 33M 配置尚未做资源基准；2048 pilot 只用于迁移对照。
 - 小语料 tokenizer 训练 CLI 已接入，见 [M2逐步教程](docs/m2-tokenizer-guide.md)；正式16K训练的速度/内存仍待测。
 - BPE 已改为倒排索引、邻边增量计数与优先队列，保留全扫描参考实现；见 [优化与复核教程](docs/m2-bpe-optimization-guide.md)。仍整读文本，以额外内存换速度，需先确定正式训练样本预算。
+- 已完成约17.7MB pilot train的16K资源探测：约148秒、CPU峰值RSS约3.14GiB，未保存词表；见 [探测复核教程](docs/m2-bpe-16k-probe-guide.md)。不等于正式语料/词表质量或33M训练资源已验收。
 - JSONL处理和仅train的BPE文本导出已接入，见 [数据处理教程](docs/m2-data-prepare-guide.md)与[文本导出教程](docs/m2-train-text-guide.md)；正式dump解析和token编码仍待完成。
 - 33M 预训练模型用于中文文本生成实验；0.6B LoRA 阶段的对话能力须通过独立评测验证。
 - 两个模型都可能产生重复、幻觉、不完整句子以及训练数据中存在的偏差。
