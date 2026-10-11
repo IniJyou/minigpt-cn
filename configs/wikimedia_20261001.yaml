@@ -1,0 +1,32 @@
+# 2026-10-11 核对官方 dumpstatus.json；固定版本，不使用会变化的 latest。
+# SHA-1 来自官方元数据；SHA-256 必须下载后计算，不能从 SHA-1 换算。
+format_version: 1
+sources:
+  zhwiki:
+    dump_date: "20261001"
+    job: articlesdumprecombine
+    filename: zhwiki-20261001-pages-articles.xml.bz2
+    url: https://dumps.wikimedia.org/zhwiki/20261001/zhwiki-20261001-pages-articles.xml.bz2
+    status_url: https://dumps.wikimedia.org/zhwiki/20261001/dumpstatus.json
+    bytes: 3430912430
+    sha1: 04d5eec3c249fdf8604b97f4435e019c60a4ec94
+    license:
+      summary: 一般原创文本为 CC BY-SA 4.0 / GFDL；导入内容可能有附加条件。
+      review_status: per_document_review_required
+      references:
+        - https://dumps.wikimedia.org/legal.html
+        - https://foundation.wikimedia.org/wiki/Policy:Terms_of_Use#7._Licensing_of_Content
+  zhwikisource:
+    dump_date: "20261001"
+    job: articlesdump
+    filename: zhwikisource-20261001-pages-articles.xml.bz2
+    url: https://dumps.wikimedia.org/zhwikisource/20261001/zhwikisource-20261001-pages-articles.xml.bz2
+    status_url: https://dumps.wikimedia.org/zhwikisource/20261001/dumpstatus.json
+    bytes: 9565159689
+    sha1: b1a6e0c5ae0b55692c41010a47f7eb02e8087e2a
+    license:
+      summary: 公有领域或授权作品需分别核对；不能将全部作品标为公有领域。
+      review_status: per_document_review_required
+      references:
+        - https://dumps.wikimedia.org/legal.html
+        - https://zh.wikisource.org/wiki/Wikisource:COPY

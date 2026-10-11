@@ -26,6 +26,16 @@
 压缩文件合计约 12.10 GiB，不含正文 JSONL 与分片；下载、提取和正式规模的内存验收仍未完成。
 完整来源依据、限制与 BPE 建议预算见 [第九小步方案](../docs/m2-formal-data-plan.md)。
 
+下载入口已接入，固定配置为configs/wikimedia_20261001.yaml；2026-10-11再次查询的官方元数据
+与上表一致。默认离线预览，`--check-remote`只查状态JSON，显式`--download`才传输压缩文件。
+小文件离线测试和真实元数据预览已通过，大型dump仍未实际下载，本地dump SHA-256仍待计算。
+详见 [下载入口教程](../docs/m2-download-guide.md)，本轮用户先做测试/预览，不开始大型传输。
+
+实际下载需新目录并检查压缩文件大小加1GiB余量，分块写.part，核对本地大小和官方SHA-1，
+再保存本地SHA-256及配置/官方状态快照，完整download_manifest.json最后不覆盖定名。
+status=verified仅表示压缩文件完整性通过，ready_for_training=false；逐篇许可仍待核对。
+首版不续传/自动重试/覆盖，失败保留诊断文件，缺完整清单不能进入正文提取。
+
 ## 预处理约定
 
 ```text

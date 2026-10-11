@@ -297,6 +297,29 @@
   用户教程使用独立m2_user_bpe_hash16m。未改作业/环境/学习笔记或执行Git写操作，根目录无关文件保留。
   新docs/m2-hash-sampling-guide.md提供测试、CLI、独立排序PASS与提交命令；停在模块复核点。
 
+## 2026-10-11：M2 第十一小步——固定版本下载入口与来源清单
+
+- 用户已提交哈希采样，HEAD=45515b0，仍在m2/tokenizer-data；本轮只接下载，不改模型/BPE/处理规则。
+- 新configs/wikimedia_20261001.yaml固定两站点URL/任务/大小/SHA-1和许可依据，许可仍需逐篇核对。
+  新data/download.py默认离线预览；check_remote只读最多2MiB官方状态；download必须显式开启，
+  始终检查官方job=done、URL/大小/SHA-1与固定配置一致，不追latest，不关闭TLS或自动跟随重定向。
+- 下载要求新目录和压缩大小加1GiB余量；1MiB分块写.part，本地重读核对大小/SHA-1并计算SHA-256。
+  配置/官方状态快照和完整下载清单保留溯源；成功status=verified但ready_for_training=false。
+  Windows不覆盖rename、POSIX不覆盖硬链接定名，不复制第二份大型dump；无续传/自动重试，失败保留诊断文件。
+- 初次Windows测试发现沙箱不允许硬链接；依Python官方平台语义改为Windows原生不覆盖rename。
+  已在两平台成功路径与目标冲突路径复跑，无旧文件被覆盖；不跳过下载成功测试来掩盖权限限制。
+- 新50项小型离线测试：预览无网络/无目录、两来源传输和快照/摘要、非法配置/超时/元数据、
+  短/长/错误摘要/编码/206/超时、空间不足、目录竞争、配置变动、清单定名失败、CLI与拒绝重定向。
+  WSL聚焦50 passed；完整CPU回归Windows435 passed、9 skipped，WSL439 passed、5 skipped；两边Ruff通过。
+  小型bz2响应约101字节，不访问公网；完整回归跳过CUDA及Windows符号链接权限测试。
+- 实际只读查询两份官方dumpstatus.json，配置的固定大小/SHA-1/URL全部匹配，WSL项目入口的两份
+  check_remote预览均planned、job=done、file=null、输出目录未创建。状态JSON摘要不混作dump摘要。
+  PowerShell HEAD两份压缩文件均HTTP200，Content-Length为3430912430/9565159689，无额外Content-Encoding。
+- 项目D盘本次可用约375.03GiB；压缩包合计约12.10GiB，不估计提取/去重/编码总空间或下载性能。
+  本轮未传输大型dump，本地dump SHA-256未知；正式下载和正文提取待后续用户验收。
+- 新docs/m2-download-guide.md提供测试/无大型传输的预览和提交命令；本轮未新增依赖，
+  未改作业/环境/学习笔记/旧数据/词表/权重，未执行Git写操作，根目录无关文件保留，停在入口复核点。
+
 ## 实验模板
 
 ### 基本信息
