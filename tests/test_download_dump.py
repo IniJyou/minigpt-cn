@@ -48,9 +48,10 @@ def remote(tmp_path, monkeypatch):
         "mutate_metadata": None,
     }
 
-    def open_response(url, timeout):
+    def open_response(url, timeout, *, offset=0):
         state["requests"].append(url)
         assert timeout == 30
+        assert offset == 0  # 原入口测试不接受意外的续传请求；续传另用受控响应测试。
         for info in config["sources"].values():
             if url == info["status_url"]:
                 status = {
@@ -241,8 +242,8 @@ def test_transfer_failure_retains_diagnostics_without_success_manifest(remote, t
     else:
         remote["status"] = 206
     output = tmp_path / "download"
-    with pytest.raises((ValueError, TimeoutError)):
-        run(remote, output, download=True)
+    with pytest.raises((ValueError, ConnectionError)):
+        run(remote, output, download=True, retries=0)
     assert (output / "source_config.yaml").exists() and (output / "dumpstatus.json").exists()
     assert not (output / "download_manifest.json").exists()
     assert not (output / remote["config"]["sources"]["zhwiki"]["filename"]).exists()
@@ -272,8 +273,8 @@ def test_existing_directory_and_creation_race_cannot_overwrite_files(remote, tmp
 def test_config_change_during_download_blocks_publication(remote, tmp_path, monkeypatch):
     original = cli._download_file
 
-    def mutate(info, partial, timeout):
-        result = original(info, partial, timeout)
+    def mutate(info, partial, timeout, **options):
+        result = original(info, partial, timeout, **options)
         remote["path"].write_bytes(remote["path"].read_bytes() + b"\n")
         return result
 

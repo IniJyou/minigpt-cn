@@ -191,9 +191,10 @@ tests/                  CPU 单元测试
 - 小语料 tokenizer 训练 CLI 已接入，见 [M2逐步教程](docs/m2-tokenizer-guide.md)；正式16K训练的速度/内存仍待测。
 - BPE 已改为倒排索引、邻边增量计数与优先队列，保留全扫描参考实现；见 [优化与复核教程](docs/m2-bpe-optimization-guide.md)。仍整读文本，以额外内存换速度，需先确定正式训练样本预算。
 - 已完成约17.7MB pilot train的16K资源探测：约148秒、CPU峰值RSS约3.14GiB，未保存词表；见 [探测复核教程](docs/m2-bpe-16k-probe-guide.md)。不等于正式语料/词表质量或33M训练资源已验收。
-- 正式双来源 dump 的20261001候选版本/官方校验信息已核对，首版BPE建议仅用16MiB train文本；见 [数据方案](docs/m2-formal-data-plan.md)。有预算的哈希整篇采样已接入且保留旧前缀行为，见 [采样复核教程](docs/m2-hash-sampling-guide.md)；正式下载、正文提取和16K产物仍待验收。
-- 固定版本的dump下载入口与来源清单已接入，默认只预览；小文件离线传输/失败校验和官方元数据查询通过，见 [下载入口教程](docs/m2-download-guide.md)。两个大型dump仍未下载，逐篇许可与正文范围未验收。
-- JSONL处理和仅train的BPE文本导出已接入，见 [数据处理教程](docs/m2-data-prepare-guide.md)与[文本导出教程](docs/m2-train-text-guide.md)；正式dump解析和token编码仍待完成。
+- 正式双来源 dump 的20261001版本与本地压缩包摘要已复核，首版BPE建议仅用16MiB train文本；见 [数据方案](docs/m2-formal-data-plan.md)。有预算的哈希整篇采样已接入且保留旧前缀行为，见 [采样复核教程](docs/m2-hash-sampling-guide.md)；全量正文、许可和16K产物仍待验收。
+- 固定版本的dump下载入口与来源清单已接入，默认只预览；支持显式断点续传和有限网络重试，见 [下载入口教程](docs/m2-download-guide.md)。两份压缩包完整性已验收，后续下载均由用户执行。
+- 流式XML前100页小样本入口已接入，保留原始wikitext与来源信息，见 [解析复核教程](docs/m2-xml-sample-guide.md)；尚未清理维基标记或核对全量正文/逐篇许可，不能直接用于训练。
+- JSONL处理和仅train的BPE文本导出已接入，见 [数据处理教程](docs/m2-data-prepare-guide.md)与[文本导出教程](docs/m2-train-text-guide.md)；全量纯正文和token编码仍待完成。
 - 33M 预训练模型用于中文文本生成实验；0.6B LoRA 阶段的对话能力须通过独立评测验证。
 - 两个模型都可能产生重复、幻觉、不完整句子以及训练数据中存在的偏差。
 - 多轮服务使用会话上下文，不提供长期记忆；微调不保证事实准确性或复杂推理能力。

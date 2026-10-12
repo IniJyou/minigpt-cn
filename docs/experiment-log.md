@@ -320,6 +320,55 @@
 - 新docs/m2-download-guide.md提供测试/无大型传输的预览和提交命令；本轮未新增依赖，
   未改作业/环境/学习笔记/旧数据/词表/权重，未执行Git写操作，根目录无关文件保留，停在入口复核点。
 
+## 2026-10-11：M2 实际下载中断后的显式续传
+
+- 用户Wikipedia下载在171835020/3430912430字节处提前EOF；快照匹配、磁盘约374.72GiB可用。
+  只读1字节Range探测返回206及正确位置，不能据此确定断开的具体网络环节。
+- 在data/download.py补resume/retries，保留旧快照和前缀，重新核对官方状态；续传只接受匹配的
+  Content-Range，服务器忽略Range/版本不一致/摘要错误直接失败，不覆盖或自动换镜像。
+- 默认3次有限网络重试，允许0～20次，等待1/2/4/8秒（上限8秒）；磁盘写入错误不重试。
+  排他锁防止并发追加；完成后仍重读整个文件核对SHA-1并计算SHA-256，检查快照未变再写成功清单。
+- 新tests/test_download_resume.py覆盖已有/空/完整.part、错位响应、断流/超时/连接失败重试、
+  重试耗尽、损坏前缀、配置/快照改变、非法目录、TLS/HTTP错误分类与Ctrl-C锁清理。
+  加上原入口共91项下载测试；CPU全量Windows476 passed、9 skipped，WSL480 passed、5 skipped；Ruff两边通过。
+- 已启动原目录续传，resume_bytes=171835020，retries=20；未启动Wikisource、正文提取或训练。
+  启动时旧前缀SHA-256=004191d34d56755e37cd2aadce0f681097921ea07362f7e0c0ec2a38aca7e980。
+  最终退出码0，status=verified，总计3430912430字节，续传含校验耗时658.300458秒。
+  本次真实传输未再次中断，重试路径仅由离线测试验收，不能宣称实测网络重试性能。
+- Wikipedia最终SHA-1匹配官方，SHA-256=5db9052efe9ca97aa3da05ffe5b2f12c8ffe5e040f0a9d1ced82ec2fda5d7e2f；
+  助手独立重算整文件SHA-1/SHA-256、旧前缀和快照摘要，全部匹配，目录仅四项正式文件，无.part/锁残留。
+  清单路径data/raw/zhwiki_20261001_v1/download_manifest.json，ready_for_training=false。
+  压缩文件已验收，正文/逐篇许可/正式双来源语料仍未验收；Wikisource本轮未下载。
+- 未修改作业环境/学习笔记/旧pilot或执行Git写操作；复核与提交命令见下载教程第6节。
+
+## 2026-10-12：M2 流式XML解析与原始wikitext小样本
+
+- 当前HEAD=81a7267，分支m2/tokenizer-data；上一轮续传补丁未提交，保留已有改动与根目录无关文件。
+  用户已完成Wikisource下载；助手本地独立重算两份压缩包摘要和快照，均匹配，未联网下载。
+  Wikisource SHA-256=8433426aee0ad8c00121a0bd057182543fef9bb12e2fb4fbb8f06258e091b703。
+  后续下载全部由用户执行；更新README/data说明中的双来源完成状态。
+- 新data/parse_xml.py在bz2流上以16KiB块供给ElementTree，页结束后clear+remove，
+  校验中文export-0.11和siteinfo/dbname；仅保存主命名空间非XML重定向的主槽位wikitext。
+  默认扫描100页/64MiB解压预算，最多10000页，仅用于小样本；不保存完整解压XML。
+- 来源清单/两份快照与整压缩包在解析前后校验；新目录输出wikitext.jsonl和sample_manifest.json。
+  保留标题、两种ID、时间、固定修订/历史URL、来源版本、许可待核对状态与原始文本摘要。
+  不输出编辑者用户名/IP；不跟随外部内容，不展开DTD/自定义实体，不清理维基标记或做繁转简。
+  使用wikitext而非text字段，ready_for_training=false，不能直接接prepare/BPE/模型。
+- 37项离线测试覆盖双来源、实体/繁体/emoji/元数据、主槽位、所有过滤计数、扫描页数/字节预算、
+  1500页根节点不累积、坏XML/压缩/清单/摘要、输入改变、不覆盖和CLI。Windows/WSL聚焦均37 passed；
+  全量CPU回归Windows513 passed、9 skipped，WSL517 passed、5 skipped；Ruff两边通过。
+- 两份真实dump各扫描前100页：Wikipedia保留67、非0命名空间30、重定向3、读取解压XML5210112字节；
+  Wikisource保留81、非0命名空间6、重定向13、读取1458176字节；其余跳过0，stop_reason=page_limit。
+  样本分别位于data/processed/m2_verification/xml_zhwiki100_v1和xml_zhwikisource100_v1，均被Git忽略。
+- JSONL输出字节数4242482/1435883；SHA-256分别为
+  2e4d24749ceafe3b9eb1f94466b750cdc990247e23e0b06ed6b5a7463ed03331 /
+  51d7fc4c8deeb63ffbd8afdadbd47143c2c78b84ba0b27a6d933805ae9b47632。
+  独立XMLPullParser逐项比对所有保存记录的标题/ID/时间/wikitext，完全一致，计数与输出摘要匹配。
+- WSL端到端（含解析前后整份压缩输入摘要）34.66/96.78秒，同一进程累计峰值RSS约36.26MiB。
+  仅小样本资源观测，不推算全量正文/外存去重/BPE成本；Wikisource目录/章节与逐篇许可仍待核对。
+- 新docs/m2-xml-sample-guide.md提供用户测试/新目录复跑/复核/提交步骤；未新增依赖，未修改
+  原dump/旧pilot/词表/权重/作业环境/CS336_note.md，未执行Git写操作，未训练或全量提取。
+
 ## 实验模板
 
 ### 基本信息

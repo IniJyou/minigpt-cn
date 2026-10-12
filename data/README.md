@@ -5,7 +5,8 @@
 ## 计划数据源
 
 - 中文 Wikipedia、中文 Wikisource：下载前查询最新完整发布的 dump，固定有日期的 URL，
-  不用会变化的 latest；本轮候选版本均为 20261001，尚未下载或验收正文。
+  不用会变化的 latest；本轮版本均为 20261001。两份压缩包已下载并通过独立完整性复核；
+  两者全量正文与逐篇许可均未验收。后续所有下载由用户亲自执行。
 
 2026-10-11 已只读核对官方状态元数据；本地 SHA-256 必须在下载完成后另行计算，
 以下不是正式训练数据已验收清单：
@@ -17,24 +18,45 @@
 | 官方状态 | [articlesdumprecombine: done](https://dumps.wikimedia.org/zhwiki/20261001/dumpstatus.json) | [articlesdump: done](https://dumps.wikimedia.org/zhwikisource/20261001/dumpstatus.json) |
 | 压缩文件字节数 | 3430912430 | 9565159689 |
 | 官方 SHA-1 | 04d5eec3c249fdf8604b97f4435e019c60a4ec94 | b1a6e0c5ae0b55692c41010a47f7eb02e8087e2a |
-| 本地 SHA-256 | 待下载后计算 | 待下载后计算 |
+| 本地 SHA-256 | 5db9052efe9ca97aa3da05ffe5b2f12c8ffe5e040f0a9d1ced82ec2fda5d7e2f | 8433426aee0ad8c00121a0bd057182543fef9bb12e2fb4fbb8f06258e091b703 |
 | 许可状态 | 一般文本 CC BY-SA 4.0 / GFDL；附加条件需保留 | 公有领域 / 授权作品需核对，不能全部标为公有领域 |
 
 许可依据见 [官方 dump 说明](https://dumps.wikimedia.org/legal.html)与
 [Wikimedia 使用条款](https://foundation.wikimedia.org/wiki/Policy:Terms_of_Use#7._Licensing_of_Content)。
 计划保留页面/修订 ID、原文及历史 URL、适用许可和处理改动；未确认的记录不计入正式验收数据。
-压缩文件合计约 12.10 GiB，不含正文 JSONL 与分片；下载、提取和正式规模的内存验收仍未完成。
+压缩文件合计约 12.10 GiB，不含正文 JSONL 与分片；全量正文提取和正式规模的内存验收仍未完成。
 完整来源依据、限制与 BPE 建议预算见 [第九小步方案](../docs/m2-formal-data-plan.md)。
 
 下载入口已接入，固定配置为configs/wikimedia_20261001.yaml；2026-10-11再次查询的官方元数据
 与上表一致。默认离线预览，`--check-remote`只查状态JSON，显式`--download`才传输压缩文件。
-小文件离线测试和真实元数据预览已通过，大型dump仍未实际下载，本地dump SHA-256仍待计算。
-详见 [下载入口教程](../docs/m2-download-guide.md)，本轮用户先做测试/预览，不开始大型传输。
+小文件离线测试和真实元数据预览已通过；两份本地SHA-256已独立重算并匹配下载清单，如上表。
+详见 [下载入口教程](../docs/m2-download-guide.md)；实际传输中断后已补上显式`--download --resume`。
 
 实际下载需新目录并检查压缩文件大小加1GiB余量，分块写.part，核对本地大小和官方SHA-1，
 再保存本地SHA-256及配置/官方状态快照，完整download_manifest.json最后不覆盖定名。
 status=verified仅表示压缩文件完整性通过，ready_for_training=false；逐篇许可仍待核对。
-首版不续传/自动重试/覆盖，失败保留诊断文件，缺完整清单不能进入正文提取。
+默认3次有限网络重试，可用`--retries`指定0～20次；显式续传仅追加匹配旧快照的.part，
+不覆盖完整dump或成功清单。失败保留诊断文件，缺完整清单不能进入正文提取。
+
+2026-10-11，Wikipedia从已有171835020字节续传完成，总计3430912430字节，SHA-1匹配官方，
+助手独立重算两个整文件摘要并确认旧前缀和快照未变；本次续传含校验耗时658.30秒。
+本地清单为data/raw/zhwiki_20261001_v1/download_manifest.json，status=verified，
+ready_for_training=false；这是压缩文件验收，不是正文提取/正式训练数据验收。
+
+2026-10-12已复核用户完成的Wikisource下载：9565159689字节，两个整文件摘要和两份快照匹配。
+清单为data/raw/zhwikisource_20261001_v1/download_manifest.json，两份均status=verified。
+
+## 已接入：流式XML与原始维基文本小样本
+
+`python -m minigpt_cn.data.parse_xml`接受本地完整下载清单，默认扫描前100页、解压预算64MiB，
+只生成新目录中的wikitext.jsonl与sample_manifest.json；不联网，不保存完整解压XML。
+16KiB读取缓冲，page结束后clear并remove，保留标题/页面和修订ID/时间/URL/来源与许可待核对状态。
+只保留主命名空间的非重定向wikitext；XML实体按标准解码，维基模板/链接/表格不清除。
+使用wikitext而非text字段，不能直接喂现有prepare入口、BPE或模型；ready_for_training=false。
+Wikisource目录/章节关系和逐篇许可仍需后续核对，不能把main namespace全部当作品正文。
+
+两份前100页小样本保存67/81页，37项离线测试通过；复核步骤见
+[流式XML小样本教程](../docs/m2-xml-sample-guide.md)。仅小样本已验收，不是全量纯正文验收。
 
 ## 预处理约定
 
@@ -64,7 +86,7 @@ status=verified仅表示压缩文件完整性通过，ready_for_training=false�
 不是字节数或 token 数；正式语料的长度阈值尚未决定。
 
 本模块不解析 Wikipedia/Wikisource dump 或 HTML，不读写文件；输入必须已经是正文字符串。
-去重和划分函数见下一节，JSONL入口和处理清单见末节；正式dump解析与编码仍待接入。
+去重和划分函数见下一节，JSONL入口和处理清单见末节；原始XML小样本入口见上节，纯正文与编码仍待接入。
 旧 pilot 数据、tokenizer 和 checkpoint 不重写。独立复核见 [清洗教程](../docs/m2-cleaning-guide.md)。
 
 ## 已接入：正文精确去重与固定划分
@@ -97,7 +119,7 @@ text字段必须是字符串；不解析XML dump、HTML或维基标记。可重�
   失败可能保留本次新建的部分文件，不自动删除；缺少完整清单的输出不可用于训练，修复后换新目录重跑。
 
 这是逐行文件入口，不是目录级事务或正式大语料资源验收；seen仍保存全部唯一正文。
-处理清单追踪本地文件与规则，不自动核实下载来源/版本/许可；正式下载仍需填写本页来源表。
+处理清单追踪本地文件与规则，不自动核实下载来源/版本/许可；下载来源摘要已填写本页来源表。
 此入口不导出纯文本或token二进制，不改旧pilot文件，详见 [JSONL处理教程](../docs/m2-data-prepare-guide.md)。
 
 ## 已接入：仅 train 的 BPE 训练文本导出
@@ -132,4 +154,4 @@ hash必须给正整数字节预算，seed默认42，只改变采样，不改变t
 来源支持source字符串或source.name，缺失/其他结构为null，不从URL猜测来源或许可。
 
 pilot复核942篇/16742929字节，与独立全排序及重复导出逐字节一致；旧1MiB前缀哈希未变。
-这不是正式双来源已下载或16K tokenizer已交付；详见 [哈希采样教程](../docs/m2-hash-sampling-guide.md)。
+哈希采样本身不证明正文/许可或16K tokenizer已交付；详见 [哈希采样教程](../docs/m2-hash-sampling-guide.md)。

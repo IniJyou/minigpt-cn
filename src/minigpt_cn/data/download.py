@@ -5,10 +5,15 @@ import hashlib
 import json
 import math
 import os
+import re
 import shutil
+import ssl
+import sys
 from datetime import datetime, timezone
+from http.client import IncompleteRead
 from pathlib import Path
-from time import perf_counter
+from time import perf_counter, sleep
+from urllib.error import HTTPError, URLError
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 import yaml
@@ -22,12 +27,16 @@ RESERVE_BYTES = 1024**3  # 仅给下载留1GiB余量，不是正文提取/训练
 DEFAULT_CONFIG = Path("configs/wikimedia_20261001.yaml")
 
 
+class _InterruptedDownload(ConnectionError):
+    """仅网络中断可重试；格式、磁盘写入和校验失败不能自动重试。"""
+
+
 class _NoRedirect(HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         return None  # 不自动转向其他主机/版本；需要重新核对并固定下载地址。
 
 
-def _open(url: str, timeout: float):
+def _open(url: str, timeout: float, *, offset: int = 0):
     request = Request(
         url,
         headers={
@@ -35,8 +44,20 @@ def _open(url: str, timeout: float):
             "Accept-Encoding": "identity",
         },
     )
+    if offset:
+        request.add_header("Range", f"bytes={offset}-")
     # 保留 Python 默认 TLS 证书验证，不关闭 HTTPS 校验。
-    return build_opener(_NoRedirect()).open(request, timeout=timeout)
+    try:
+        return build_opener(_NoRedirect()).open(request, timeout=timeout)
+    except HTTPError as error:
+        if error.code not in (408, 429, 500, 502, 503, 504):
+            raise  # 404、403、重定向、416等不靠重试掩盖。
+        raise _InterruptedDownload(f"HTTP {error.code}") from error
+    except (URLError, OSError) as error:
+        reason = getattr(error, "reason", error)
+        if isinstance(reason, ssl.SSLCertVerificationError):
+            raise  # 证书验证失败不能当普通网络抖动处理。
+        raise _InterruptedDownload("网络连接中断") from error
 
 
 def _load_source(path: Path, name: str) -> tuple[dict, bytes]:
@@ -99,6 +120,13 @@ def _check_remote(info: dict, timeout: float) -> tuple[dict, bytes]:
         raw = response.read(STATUS_LIMIT + 1)
     if len(raw) > STATUS_LIMIT:
         raise ValueError("官方状态文件超过2MiB，拒绝作为有效元数据")
+    return _validate_status(info, raw), raw
+
+
+def _validate_status(info: dict, raw: bytes) -> dict:
+    """同一规则核对联网状态和旧目录快照，不以文件名相同代替版本一致。"""
+    if len(raw) > STATUS_LIMIT:
+        raise ValueError("官方状态文件超过2MiB，拒绝作为有效元数据")
     status = json.loads(raw.decode("utf-8"), parse_constant=_reject_nonfinite)
     try:
         job = status["jobs"][info["job"]]
@@ -117,37 +145,72 @@ def _check_remote(info: dict, timeout: float) -> tuple[dict, bytes]:
             "status": "done",
             "updated": job.get("updated"),
             "sha256": hashlib.sha256(raw).hexdigest(),
-        }, raw
+        }
     except (KeyError, TypeError) as error:
         raise ValueError("官方状态文件缺失字段或结构错误") from error
 
 
-def _download_file(info: dict, partial: Path, timeout: float) -> tuple[int, str, str]:
-    received = 0
-    with _open(info["url"], timeout) as response:
-        if response.status != 200:
-            raise ValueError("下载必须返回 HTTP 200；首版不接受206或断点续传")
-        length = response.headers.get("Content-Length")
-        if length is not None and int(length) != info["bytes"]:
-            raise ValueError("HTTP Content-Length 与固定大小不一致")
-        if response.headers.get("Content-Encoding", "identity") != "identity":
-            raise ValueError("下载需要原始压缩文件字节，不能额外进行 HTTP 内容编码")
-        with (
-            partial.open("xb") as file,
-            tqdm(total=info["bytes"], unit="B", unit_scale=True) as bar,
-        ):
-            while True:
-                # 按1MiB块写盘，不把3～9GiB文件读入内存；多读至多1字节用于发现超长响应。
-                block = response.read(min(CHUNK_BYTES, info["bytes"] - received + 1))
-                if not block:
-                    break
-                received += len(block)
-                if received > info["bytes"]:
-                    raise ValueError("下载字节数超过固定大小，拒绝继续写入")
-                file.write(block)
-                bar.update(len(block))
-    if received != info["bytes"]:
-        raise ValueError("下载不完整，字节数与固定大小不一致")
+def _check_response(response, offset: int, total: int) -> None:
+    if offset:
+        # Range从第offset字节开始（0起始）；206必须对应[offset, total-1]，含两个端点。
+        # 若服务器忽略Range返回200，直接停止，绝不把完整文件追加到旧前缀后面。
+        if response.status != 206:
+            raise ValueError("续传必须返回 HTTP 206；拒绝追加从头开始的响应")
+        match = re.fullmatch(r"bytes (\d+)-(\d+)/(\d+)", response.headers.get("Content-Range", ""))
+        if match is None or tuple(map(int, match.groups())) != (offset, total - 1, total):
+            raise ValueError("Content-Range 的起点/终点/总大小与续传位置不一致")
+    elif response.status != 200 or response.headers.get("Content-Range") is not None:
+        raise ValueError("首次下载必须返回 HTTP 200，不能包含部分响应")
+    length = response.headers.get("Content-Length")
+    if length is not None and int(length) != total - offset:
+        raise ValueError("HTTP Content-Length 与剩余大小不一致")
+    if response.headers.get("Content-Encoding", "identity") != "identity":
+        raise ValueError("下载需要原始压缩文件字节，不能额外进行 HTTP 内容编码")
+
+
+def _download_file(
+    info: dict, partial: Path, timeout: float, *, resume: bool = False, retries: int = 3
+) -> tuple[int, str, str]:
+    with partial.open("r+b" if resume else "xb") as file:
+        received = file.seek(0, os.SEEK_END)  # 只在末尾追加，不截断已经下载的前缀。
+        if received > info["bytes"]:
+            raise ValueError("残留文件超过固定大小，不能续传")
+        with tqdm(total=info["bytes"], initial=received, unit="B", unit_scale=True) as bar:
+            attempts = 0
+            while received < info["bytes"]:
+                try:
+                    with _open(info["url"], timeout, offset=received) as response:
+                        _check_response(response, received, info["bytes"])
+                        while True:
+                            try:
+                                block = response.read(
+                                    min(CHUNK_BYTES, info["bytes"] - received + 1)
+                                )
+                            except (OSError, IncompleteRead) as error:
+                                raise _InterruptedDownload("读取响应时连接中断") from error
+                            if not block:
+                                break
+                            if received + len(block) > info["bytes"]:
+                                raise ValueError("下载字节数超过固定大小，拒绝继续写入")
+                            file.write(block)  # 磁盘错误不在网络重试的捕获范围内。
+                            received += len(block)
+                            bar.update(len(block))
+                    if received != info["bytes"]:
+                        raise _InterruptedDownload("响应流提前结束")
+                except _InterruptedDownload as error:
+                    file.flush()
+                    if attempts >= retries:
+                        raise _InterruptedDownload(
+                            f"下载不完整：已收到{received}/{info['bytes']}字节；"
+                            f"已用完{retries}次重试，可用 --download --resume 接着下载"
+                        ) from error
+                    attempts += 1
+                    delay = min(2 ** (attempts - 1), 8)
+                    tqdm.write(
+                        f"{error}；{delay}秒后从{received}字节续传（重试{attempts}/{retries}）",
+                        file=sys.stderr,
+                    )
+                    sleep(delay)
     # 从关闭后的本地文件重算摘要，而不是只对网络流计算；SHA-1核对官方，SHA-256留作本地溯源。
     sha1, sha256 = hashlib.sha1(), hashlib.sha256()
     count = 0
@@ -159,6 +222,25 @@ def _download_file(info: dict, partial: Path, timeout: float) -> tuple[int, str,
     if count != info["bytes"] or sha1.hexdigest() != info["sha1"]:
         raise ValueError("本地文件大小或 SHA-1 校验失败，不写成功清单")
     return count, sha1.hexdigest(), sha256.hexdigest()
+
+
+def _resume_state(output: Path, info: dict, raw_config: bytes) -> tuple[int, bytes]:
+    """只接受本入口留下的未完成目录；旧快照不覆盖，已成功/定名的文件不续写。"""
+    names = {"source_config.yaml", "dumpstatus.json", info["filename"] + ".part"}
+    if output.is_symlink() or not output.is_dir():
+        raise ValueError("--resume 需要已有的普通下载目录")
+    if {p.name for p in output.iterdir()} != names:
+        raise ValueError("续传目录必须仅含配置/状态快照和.part；完整文件/清单/锁或其他文件禁止续写")
+    if any((output / name).is_symlink() or not (output / name).is_file() for name in names):
+        raise ValueError("续传文件必须是普通文件，不能是符号链接")
+    if (output / "source_config.yaml").read_bytes() != raw_config:
+        raise ValueError("续传配置与旧快照不一致，不能拼接不同实验/版本的数据")
+    raw_status = (output / "dumpstatus.json").read_bytes()
+    _validate_status(info, raw_status)
+    size = (output / (info["filename"] + ".part")).stat().st_size
+    if size > info["bytes"]:
+        raise ValueError("残留文件超过固定大小，不能续传")
+    return size, raw_status
 
 
 def _publish(partial: Path, final: Path) -> None:
@@ -180,20 +262,31 @@ def download_dump(
     download: bool = False,
     check_remote: bool = False,
     timeout: float = 30.0,
+    resume: bool = False,
+    retries: int = 3,
 ) -> dict:
     """默认不联网、不创建目录；check_remote只读元数据；download始终核对元数据后下载。
 
     timeout 是每次阻塞网络操作的超时，不是整个下载的总时限。
-    必须使用新目录；失败保留诊断文件，无完整download_manifest.json不可视为成功。
+    默认要求新目录；显式download+resume才允许接着旧.part写入。无完整清单不可视为成功。
     """
     if type(download) is not bool or type(check_remote) is not bool:
         raise TypeError("download/check_remote 必须是 bool")
     if type(timeout) not in (int, float) or not math.isfinite(timeout) or timeout <= 0:
         raise ValueError("timeout 必须是有限正数")
+    if type(resume) is not bool:
+        raise TypeError("resume 必须是 bool")
+    if resume and not download:
+        raise ValueError("--resume 必须与 --download 一起使用")
+    if type(retries) is not int or not 0 <= retries <= 20:
+        raise ValueError("retries 必须是0～20的整数（不含第一次请求）")
     config_path = Path(config_path).resolve()
     info, raw_config = _load_source(config_path, source)
     output = Path(output_dir)
-    if output.exists() or output.is_symlink():
+    resume_bytes, saved_status = 0, None
+    if resume:
+        resume_bytes, saved_status = _resume_state(output, info, raw_config)
+    elif output.exists() or output.is_symlink():
         raise FileExistsError("--output-dir 已存在，请换新目录；不覆盖旧下载")
     output = output.resolve()
     parent = output.parent
@@ -202,8 +295,8 @@ def download_dump(
     if not parent.is_dir():
         raise ValueError("输出目录的已有父路径必须是目录，不能是普通文件")
     free = shutil.disk_usage(parent).free
-    if free < info["bytes"] + RESERVE_BYTES:
-        raise ValueError("磁盘空间不足：至少需要压缩文件大小加1GiB下载余量（不含后续处理）")
+    if free < info["bytes"] - resume_bytes + RESERVE_BYTES:
+        raise ValueError("磁盘空间不足：至少需要剩余压缩文件大小加1GiB下载余量（不含后续处理）")
     report = {
         "format_version": 1,
         "kind": "wikimedia_dump_download",
@@ -226,14 +319,38 @@ def download_dump(
     if not download:
         return report
     started = perf_counter()
-    output.mkdir(parents=True, exist_ok=False)
-    for name, raw in (("source_config.yaml", raw_config), ("dumpstatus.json", raw_status)):
-        with (output / name).open("xb") as file:
-            file.write(raw)
+    if not resume:
+        output.mkdir(parents=True, exist_ok=False)
+        for name, raw in (("source_config.yaml", raw_config), ("dumpstatus.json", raw_status)):
+            with (output / name).open("xb") as file:
+                file.write(raw)
+    else:
+        # 联网重新核对固定版本，但清单引用原始快照，不能把新的摘要配上旧的文件。
+        report["official_status"] = _validate_status(info, saved_status)
+    report["transfer"] = {"resume_bytes": resume_bytes, "max_retries": retries}
+    lock = output / ".download.lock"
+    # 排他创建锁；并发进程不能同时追加。只清理本进程创建的锁，不删除旧数据。
+    with lock.open("x"):
+        pass
+    try:
+        return _finish_download(
+            info, output, config_path, report, timeout, resume, retries, started
+        )
+    finally:
+        lock.unlink()
+
+
+def _finish_download(info, output, config_path, report, timeout, resume, retries, started):
     partial = output / (info["filename"] + ".part")
-    count, sha1, sha256 = _download_file(info, partial, timeout)
+    count, sha1, sha256 = _download_file(info, partial, timeout, resume=resume, retries=retries)
     if _sha256(config_path) != report["source_config"]["sha256"]:
         raise RuntimeError("下载期间来源配置发生变化，不写成功清单")
+    for name, expected in (
+        ("source_config.yaml", report["source_config"]["sha256"]),
+        ("dumpstatus.json", report["official_status"]["sha256"]),
+    ):
+        if _sha256(output / name) != expected:
+            raise RuntimeError("下载期间来源快照发生变化，不写成功清单")
     _publish(partial, output / info["filename"])
     report.update(
         status="verified",
@@ -257,6 +374,8 @@ def main(argv=None):
     parser.add_argument("--output-dir", type=Path, required=True, help="新目录，不覆盖；预览不创建")
     parser.add_argument("--check-remote", action="store_true", help="仅查询小型官方状态元数据")
     parser.add_argument("--download", action="store_true", help="显式开始大型dump传输")
+    parser.add_argument("--resume", action="store_true", help="配合--download，从旧目录的.part继续")
+    parser.add_argument("--retries", type=int, default=3, help="网络中断重试次数，0～20，默认3")
     parser.add_argument("--timeout", type=float, default=30.0, help="单次网络阻塞超时秒数")
     args = parser.parse_args(argv)
     try:
@@ -267,12 +386,15 @@ def main(argv=None):
             download=args.download,
             check_remote=args.check_remote,
             timeout=args.timeout,
+            resume=args.resume,
+            retries=args.retries,
         )
         print(json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False))
         return report
     except (OSError, ValueError, TypeError, RuntimeError, yaml.YAMLError) as error:
         parser.error(
-            f"{error}\n未完成下载；无完整download_manifest.json不能视为校验通过；换新目录重试。"
+            f"{error}\n未完成下载；无完整download_manifest.json不能视为校验通过；"
+            "网络中断且旧目录完整时可加 --resume，配置/响应/摘要错误须先排查。"
         )
     except KeyboardInterrupt:
         parser.exit(130, "下载已中断；保留本次诊断文件，无完整清单不可用于后续处理。\n")
