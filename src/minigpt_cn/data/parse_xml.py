@@ -214,7 +214,7 @@ def _iter_pages(stream, source, max_pages, max_xml_bytes, stats):
                     stack.pop()
                     stats["xml_bytes_read"] = reader.count
                     yield reason, record
-                    if stats["pages_scanned"] >= max_pages:
+                    if max_pages is not None and stats["pages_scanned"] >= max_pages:
                         stats["stop_reason"] = "page_limit"
                         return  # 小样本主动停在页边界；不声称检查了后面全部XML。
                     continue

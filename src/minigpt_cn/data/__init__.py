@@ -1,6 +1,6 @@
 """数据处理子包。
 
-已有清洗、去重、划分、JSONL/训练文本入口、XML/wikitext小样本与token读取；纯正文和编码管线后续接入。
+已有清洗、去重、划分、JSONL/训练文本入口与pilot编码；Wikimedia工具冻结，正式语料另行验收。
 """
 
 from .cleaning import clean_document, normalize_text

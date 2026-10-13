@@ -1,203 +1,104 @@
 # MiniGPT-CN
 
-从零实现约 33M 参数的中文 Decoder-only Transformer，完成 BPE Tokenizer、Causal
-Self-Attention、RoPE、RMSNorm、SwiGLU、训练循环和 KV Cache；随后基于支持中文的
-0.6B 基础模型进行 LoRA 指令微调，构建多轮对话服务并评估微调效果。
+从零实现约33M参数的中文 Decoder-only Transformer，完成训练、生成和评测；
+33M主线完成后，再推进独立0.6B基座的 LoRA-SFT 与多轮服务。
 
-> 当前状态：已将通过中文 pilot 验收的 Transformer 和 BPE 编解码迁入项目。
-> 同一份 pilot 权重在 CPU/FP32、CUDA/BF16 下的完整 logits 和验证 loss 均与作业实现
-> 完全一致。项目训练/完整评估/中文生成 CLI、断点恢复与 KV Cache 已接入；
-> 缓存/无缓存 greedy 一致性已验收，正式 33M 预训练和 LoRA 服务仍待实现。
-> 迁移验收见 [docs/pilot-migration.md](docs/pilot-migration.md)。
-> 配置化 checkpoint 已接入；旧 pilot 可显式导入为自带模型配置的推理文件，
-> 新训练 checkpoint 支持优化器、随机状态和采样状态恢复，见 [步骤2教程](docs/step2-guide.md)。
+**继续任务先读 [当前工作与交接](docs/current-work.md)。这是唯一的下一任务入口。**
+参考文档说明接口，实验日志保存历史结论，不把历史“下一步”当成当前计划。
 
-## English summary
+## 当前状态
 
-MiniGPT-CN plans to implement a ~33M Chinese Decoder-only Transformer from scratch,
-then fine-tune a separate 0.6B base model with LoRA for multi-turn chat. The project
-focuses on readable implementations, reproducible training, and controlled
-evaluation of instruction following, repetition, and inference performance.
-The Transformer and BPE codec have been integrated and verified against the original
-Chinese pilot checkpoint. Config-driven training, full evaluation, and checkpoint resume are
-available, along with a Chinese generation CLI and an optional KV Cache. Sliding the
-context window rebuilds the cache to preserve the uncached generation semantics.
+- 已验收：模型核心、权重共享、dropout、BPE编解码/增量训练、训练与完整评估、
+  配置化checkpoint/恢复、生成CLI和KV Cache。
+- 已具备：正文清洗/去重/划分、仅train文本导出，以及可复用的Wikimedia数据工具。
+- 已验收：16000词表tokenizer保存/重载、同版本pilot三集合uint16编码与全部1000篇磁盘读回。
+- 已验收：33M本地100步短训练、50步保存/恢复与连续训练状态完全一致、独立重载完整验证。
+- 已验收：AutoDL/RTX4080 SUPER的500步资源验证与本地原始产物；已记录累计费用3.09元及用户保留实例运行的决定。
+- 已准备：50元总预算下的正式语料与首轮预训练方案，具体正式输入仍待验收。
+- 尚未完成：正式语料准备、正式预训练与展示。
+- 数据工具本轮收尾并冻结扩建；不再追求完整维基渲染、全站扫描或通用审批平台。
+  未审批的候选不是训练语料，旧有损正文不会因升级源码自动修好。
 
-## 项目目标
+## 主线顺序
 
-- 从零理解并实现现代 Decoder-only Transformer 的主要组件。
-- 在本地完成 smoke test 和小模型 pilot，在云端训练约 33M 参数的正式模型。
-- 保存配置、数据来源、训练曲线、消融结果和成本，提供可复现的生成 CLI。
-- 在同一个 0.6B 基座模型上实施 LoRA-SFT，提供支持会话历史和流式输出的对话服务。
-- 比较 0.6B 基座微调前后的指令遵循率、重复率和推理性能，记录失败案例和能力边界。
+1. 复用已验收pilot的train文本，保存并验收16000词表tokenizer。
+2. 使用同一tokenizer编码固定train/valid/test，完成33M本地短训练和恢复检查。
+3. 在实际AutoDL设备跑约500步，测显存、吞吐和稳定性，再确定费用与训练预算。
+4. 准备预算明确的正式语料，正式预训练、生成、评测和展示。
+5. 最后推进独立0.6B LoRA阶段。
 
-## 两阶段技术路线
+pilot小语料只用于验证闭环，不能靠重复它凑出1亿token就宣称正式预训练效果。
+正式首轮计划1亿tokens；只有验证仍改善、语料规模合适且预算允许时才扩到2亿。
 
-| 阶段 | 模型与方法 | 主要交付物 |
-| --- | --- | --- |
-| 从零预训练 | 自行实现约 33M Transformer 和 16K byte-level BPE | 组件测试、训练系统、checkpoint、生成 CLI、消融实验 |
-| 指令微调与服务 | 独立的 0.6B 基座模型 + LoRA-SFT | adapter、多轮对话服务、微调前后评测和模型卡 |
+## 正式模型配置
 
-两个阶段使用各自的模型权重和 tokenizer。33M 模型不会通过 LoRA 变成 0.6B 模型，
-自制的 BPE 也不能直接替换 0.6B 基座的 tokenizer。33M 阶段用于展示原理实现和预训练；
-0.6B 阶段用于展示指令微调、评测和部署。
-
-## 计划中的正式模型
-
-| 配置项 | 数值 |
+| 配置 | 值 |
 | --- | ---: |
-| Vocabulary | 16,000 |
-| Context length | 512 |
-| Layers | 8 |
-| Attention heads | 8 |
-| Hidden size | 512 |
-| SwiGLU hidden size | 1,344 |
-| Parameter target | 约 33M |
+| vocabulary / context | 16000 / 512 |
+| layers / heads | 8 / 8 |
+| d_model / d_ff | 512 / 1344 |
+| norm / position / activation | RMSNorm / RoPE / SwiGLU |
+| tied embeddings / dropout / bias | true / 0.1 / false |
 
-使用 RMSNorm、RoPE、SwiGLU，并共享输入 embedding 与输出 projection 的权重。
-完整配置见 [configs/minigpt_33m.yaml](configs/minigpt_33m.yaml)。
+配置见 [minigpt_33m.yaml](configs/minigpt_33m.yaml)，参数约33M。
+2048词表的旧pilot权重不能与新16K tokenizer混用。
+33M模型定位为中文文本生成实验，不承诺可靠的聊天或指令遵循能力。
 
-首轮计划训练 1 亿 tokens；验证集仍持续改善且预算允许时，再扩展到 2 亿 tokens。
-正式训练前必须通过组件测试、小 batch 过拟合、本地 pilot 和 checkpoint 恢复演练。
-33M 模型定位为中文文本生成实验，不承诺可靠的指令遵循或聊天能力。
+## 里程碑
 
-## 0.6B LoRA 指令微调计划
+| 阶段 | 状态 |
+| --- | --- |
+| M0 Bootstrap | 基础搭建已完成 |
+| M1 Transformer Core | 实现与本地验收已完成 |
+| M2 Tokenizer and Training | 核心工具、16K pilot数据与33M本地短训练/恢复闭环已验收 |
+| M3 33M Pretraining | 云端资源验证已验收；50元正式准备方案已保存，正式语料/预训练待完成 |
+| M4 Portfolio Release | 生成CLI已有；正式模型、评测与展示待完成 |
+| M5 LoRA Chat and Evaluation | 独立0.6B基座与其自带tokenizer，33M主线完成后开展 |
 
-候选基座为 [Qwen3-0.6B-Base](https://huggingface.co/Qwen/Qwen3-0.6B-Base)，
-它是支持中文的多语言预训练模型，模型卡标注 Apache-2.0 许可。正式实验会固定模型
-revision、tokenizer、chat template 和依赖版本，避免下载更新影响复现。
+GitHub状态、提交和合并由用户操作；此表描述本地实现，不代替远端验收。
+位置编码、tokenizer和KV Cache消融属于后续评测，不阻挡首个33M闭环。
 
-1. 准备来源和许可明确的中文指令数据，包含单轮和多轮会话。按完整会话划分
-   train/validation/test，并进行去重，确保评测内容不进入训练集。
-2. 使用基座自带的 tokenizer，统一训练与推理的 chat template；只对 assistant 回复
-   计算训练 loss，并检查截断、结束 token 和多轮样本的标签是否正确。
-3. 使用 [PEFT LoRA](https://huggingface.co/docs/peft/main/en/package_reference/lora)
-   和 [TRL SFTTrainer](https://huggingface.co/docs/trl/main/en/sft_trainer)，冻结基座，
-   先用少量样本跑通训练、保存和加载，再确定数据规模、LoRA rank 与训练预算。
-4. 对话服务携带当前会话历史，按 token 预算管理上下文，支持流式输出，并提供简单
-   的 Gradio 页面。该阶段使用基座推理框架的 KV Cache；33M 模型中的 KV Cache
-   则由项目自行实现和测试。
-5. 保存 adapter、微调配置、数据清单、评测结果和失败案例，不把训练完成等同于效果改善。
+## 文档导航
 
-微调所需的 PEFT、TRL、Transformers 和演示依赖将在后续阶段配置；当前安装命令只覆盖
-已有骨架的运行和开发依赖。
+- [当前工作与交接](docs/current-work.md)：范围、环境、下一任务与提交收尾。
+- [Tokenizer操作](docs/tokenizer-guide.md)：已验收16K版本与保存/重载接口。
+- [Token编码验收](docs/token-encoding-guide.md)：同版本三集合uint16产物、复现与独立读回。
+- [33M短验证](docs/33m-short-validation.md)：本地100步、精确恢复、完整验证与资源统计范围。
+- [AutoDL资源验证](docs/autodl-resource-guide.md)：500步云端实测结果、统计范围与产物归档收尾。
+- [正式预训练方案](docs/formal-pretraining-plan.md)：50元预算、实测推算、正文来源候选与逐项验收范围。
+- [模型与运行接口](docs/runtime-reference.md)：张量、checkpoint、训练/评估/生成入口。
+- [数据工具参考](docs/data-reference.md)：已实现的工具与边界，按需查询，不是待办清单。
+- [数据来源与产物状态](data/README.md)：哪些能复用，哪些不能训练。
+- [阶段路线](docs/learning-roadmap.md)：主线验收顺序，不再按旧十周教程重做。
+- [实验结论](docs/experiment-log.md)：真实历史结果和已知限制，不是当前操作指令。
 
-## 评测与消融设计
+## 环境与检查
 
-核心对照是同一个 0.6B 基座的 **Base vs LoRA-SFT**：固定测试集、tokenizer、
-chat template、解码参数、硬件和精度。33M 模型可作为独立参考，但参数量、语料和
-tokenizer 的差异意味着不能把它与 0.6B 的分数差距解释为 SFT 的收益。
+本地设备为RTX 4060 Laptop 8GB、约31GB内存；本地用于开发和短验证，正式训练在云端。
+已有WSL项目环境：/home/luoyu/.venvs/minigpt-cn；作业环境单独保留。
+缺依赖时由用户安装，助手不自行下载或重建环境。
 
-| 实验 | 记录内容 | 对照条件 |
-| --- | --- | --- |
-| 指令遵循 | 冻结约 100～200 条测试指令，覆盖格式约束、信息提取和多轮上下文；报告通过率与失败案例 | 可自动判断的使用规则，其余按固定标准人工复核 |
-| 重复率 | 重复 4-gram 比例、输出长度、生成样例 | 相同 prompts、解码参数和最大输出长度，预先固定指标定义 |
-| 推理性能 | 首 token 延迟、后续生成 tokens/s、显存峰值 | 相同硬件、精度、batch 和输入/输出长度；预热后多次测量 |
-| 33M tokenizer 消融 | Character vs 16K BPE 的 BPB、bytes/token 和处理速度 | 相同文档划分与训练预算，不直接比较不同 tokenizer 的 perplexity |
-| 33M 位置编码消融 | Learned positional embedding vs RoPE 的验证 loss 和生成样例 | 相同数据、seed 和训练预算 |
-| 33M KV Cache 消融 | cached/uncached greedy 输出一致性、生成速度和显存 | 同一 checkpoint、prompt 和生成长度 |
+Windows已有环境检查：
 
-LoRA 的主要目标是改善指令遵循，吞吐量是否变化需要实测。性能实验应分别注明
-adapter 挂载和合并权重的方式；验证 loss、训练 loss 或少数展示样例不能替代独立评测。
-
-## 里程碑与当前进度
-
-| Milestone | 范围 | 当前状态 |
-| --- | --- | --- |
-| M0 Repository Bootstrap | 包骨架、配置、测试、CPU CI 和文档 | 已完成基础搭建 |
-| M1 Transformer Core | Attention、RMSNorm、RoPE、SwiGLU、完整模型与组件测试 | 核心迁移与 KV Cache 已通过本地验收；Git 提交/合并由用户执行 |
-| M2 Tokenizer and Training | BPE、数据管线、训练、checkpoint 和恢复 | 增量 BPE 训练/训练 CLI 与编解码、JSONL清洗/去重/划分及仅train文本导出、已有 token 数据读取、模型训练/完整评估与恢复已接入；正式数据管线与16K词表待完成 |
-| M3 33M Pretraining | 本地验证、云端预训练、训练曲线和消融 | 待实现 |
-| M4 Portfolio Release | 33M 生成工具、演示、模型卡、可复现发布 | 基础生成 CLI 已接入；正式模型、演示与发布待完成 |
-| M5 LoRA Chat and Evaluation | 0.6B 指令微调、多轮服务与受控评测 | 新增计划，GitHub milestone 待创建 |
-
-先完成 M1～M4，再推进 M5。原十周安排对应 33M 主线，新增微调与服务需要额外时间，
-按验收结果推进，不以固定日期代替测试和实验。
-
-## 本地环境
-
-- Python 3.10+
-- Windows / Linux
-- 本地开发设备：RTX 4060 Laptop 8GB、约 31GB 内存
-- 正式训练计划：AutoDL 单张 RTX 4090 24GB
-
-本地用于开发、33M 小规模验证以及 0.6B LoRA 的显存试跑。0.6B 的 BF16 权重本身
-约为 1.2 GB，训练还需激活和框架开销；8GB 显存下的序列长度、micro batch 与
-gradient checkpointing 设置必须实测。安装 PyTorch 时应根据用途选择 CPU 或 CUDA 构建，
-不能仅凭依赖安装成功就认定 GPU 环境已经可用。
-
-原计划的 50～80 元、最高 100 元预算仅针对 33M 主线，不作为扩展项目的总费用承诺。
-各阶段先试跑，再根据实测吞吐量和租机价格估算：
-
-```text
-预训练小时数 = 目标 tokens / 实测训练 tokens/s / 3600
-租机成本 = 实际运行小时数 × 实际单价
-总成本另计数据处理、验证、微调、推理评测和存储等费用
-```
-
-费用与吞吐量均在实验记录中填写实际数字。
-
-## 开发环境
-
-```powershell
-py -3.12 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
+~~~powershell
 .\.venv\Scripts\python.exe -m ruff check .
-.\.venv\Scripts\python.exe -m pytest
-```
+.\.venv\Scripts\python.exe -m pytest -q --tb=short
+~~~
 
-Linux/macOS 下将虚拟环境解释器路径替换为 `.venv/bin/python`。
+WSL已有环境检查：
 
-## 仓库结构
-
-```text
-configs/                模型和训练配置
-data/                   数据说明（原始数据不会提交到 Git）
-docs/                   学习路线与实验记录
-src/minigpt_cn/         Python 源码
-tests/                  CPU 单元测试
-.github/workflows/      GitHub Actions CI
-```
-
-## 学习顺序
-
-1. PyTorch 张量、autograd、`nn.Module` 与训练循环。
-2. 字符级 bigram 语言模型。
-3. Causal Self-Attention 与 Multi-Head Attention。
-4. RMSNorm、RoPE、SwiGLU 和完整 Transformer Block。
-5. BPE Tokenizer、数据管线、训练和生成。
-6. KV Cache、生成策略和推理性能测量。
-7. 指令数据、LoRA、SFT、chat template 与多轮对话评测。
-
-33M 主线的原十周安排见 [docs/learning-roadmap.md](docs/learning-roadmap.md)，
-实验记录见 [docs/experiment-log.md](docs/experiment-log.md)。LoRA 扩展以本 README 的
-阶段计划为准；学习笔记的进展不代表项目实现已完成。
+~~~bash
+cd /mnt/d/aiworkspace/transformer
+source /home/luoyu/.venvs/minigpt-cn/bin/activate
+CUDA_VISIBLE_DEVICES=-1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 python -m pytest -q --tb=short
+python -m ruff check .
+~~~
 
 ## 数据与发布原则
 
-- 训练数据、checkpoint、日志和密钥永不提交到 Git。
-- 正式数据必须在 `data/README.md` 中记录来源、日期、许可和校验和。
-- 最终发布 tokenizer、配置、推理权重和校验和，不发布原始语料或优化器状态。
-- LoRA 阶段记录基座 revision、数据许可和 adapter 配置；第三方模型、数据和
-  adapter 的使用与发布遵循各自许可，仓库的 MIT 许可不替代这些要求。
-
-## 已知限制
-
-- 模型、训练/完整评估/生成 CLI、恢复与可选 KV Cache 已接入，教程见步骤2的F段。
-- 生成目前单条、非流式；旧 pilot 仍会重复/不连贯，可能生成非法 UTF-8 字节。缓存不改善文本质量。
-- 当前缓存策略为 `rebuild_on_slide`：满窗口后每次重建，保持原窗口裁剪语义，但此时没有增量加速。
-- 新训练默认从随机权重开始；旧 pilot 导入文件不能作为精确续训入口。
-- 正式16K tokenizer 尚未产出，正式 33M 配置尚未做资源基准；2048 pilot 只用于迁移对照。
-- 小语料 tokenizer 训练 CLI 已接入，见 [M2逐步教程](docs/m2-tokenizer-guide.md)；正式16K训练的速度/内存仍待测。
-- BPE 已改为倒排索引、邻边增量计数与优先队列，保留全扫描参考实现；见 [优化与复核教程](docs/m2-bpe-optimization-guide.md)。仍整读文本，以额外内存换速度，需先确定正式训练样本预算。
-- 已完成约17.7MB pilot train的16K资源探测：约148秒、CPU峰值RSS约3.14GiB，未保存词表；见 [探测复核教程](docs/m2-bpe-16k-probe-guide.md)。不等于正式语料/词表质量或33M训练资源已验收。
-- 正式双来源 dump 的20261001版本与本地压缩包摘要已复核，首版BPE建议仅用16MiB train文本；见 [数据方案](docs/m2-formal-data-plan.md)。有预算的哈希整篇采样已接入且保留旧前缀行为，见 [采样复核教程](docs/m2-hash-sampling-guide.md)；全量正文、许可和16K产物仍待验收。
-- 固定版本的dump下载入口与来源清单已接入，默认只预览；支持显式断点续传和有限网络重试，见 [下载入口教程](docs/m2-download-guide.md)。两份压缩包完整性已验收，后续下载均由用户执行。
-- 流式XML前100页小样本入口已接入，保留原始wikitext与来源信息，见 [解析复核教程](docs/m2-xml-sample-guide.md)；尚未清理维基标记或核对全量正文/逐篇许可，不能直接用于训练。
-- JSONL处理和仅train的BPE文本导出已接入，见 [数据处理教程](docs/m2-data-prepare-guide.md)与[文本导出教程](docs/m2-train-text-guide.md)；全量纯正文和token编码仍待完成。
-- 33M 预训练模型用于中文文本生成实验；0.6B LoRA 阶段的对话能力须通过独立评测验证。
-- 两个模型都可能产生重复、幻觉、不完整句子以及训练数据中存在的偏差。
-- 多轮服务使用会话上下文，不提供长期记忆；微调不保证事实准确性或复杂推理能力。
+原始语料、token分片、checkpoint、日志、密钥和缓存不提交Git。
+保留来源、版本、许可、划分和校验和；公开权重/数据/adapter前核对适用许可。
+代码的MIT许可不替代第三方语料或模型许可。项目学习笔记CS336_note.md独立维护，不修改。
 
 ## License
 

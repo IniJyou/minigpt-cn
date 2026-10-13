@@ -20,6 +20,8 @@ dependencies = [
     "regex>=2024.0",
     # 与已验收中文 pilot 使用同一繁简转换实现和字典版本。
     "OpenCC==1.4.2",
+    # 仅解析本地维基标记；不访问网站或展开远程模板。
+    "mwparserfromhell==0.7.2",
 ]
 
 [project.optional-dependencies]

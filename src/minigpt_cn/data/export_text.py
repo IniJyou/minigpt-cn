@@ -5,6 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 
+from minigpt_cn.data.corpus import WORK_SPLIT_RULE, choose_work_split
 from minigpt_cn.data.prepare import _reject_nonfinite, _sha256
 from minigpt_cn.data.sampling import HASH_RULE, _HashPrefixSampler
 from minigpt_cn.data.splitting import choose_split
@@ -42,9 +43,21 @@ def _load_manifest(path: Path) -> tuple[dict, str]:
             or any(c not in "0123456789abcdef" for c in digest)
         ):
             raise ValueError("train 的 SHA-256 格式不正确")
-        if manifest["processing"]["split_rule"] != SPLIT_RULE:
+        rule = manifest["processing"]["split_rule"]
+        if rule == WORK_SPLIT_RULE:
+            if (
+                manifest.get("kind") != "prepared_work_corpus"
+                or manifest.get("status") != "completed"
+                or manifest["leakage_check"]["passed"] is not True
+                or manifest["leakage_check"]["duplicate_text_across_splits"] != 0
+                or manifest["leakage_check"]["work_groups_across_splits"] != 0
+            ):
+                raise ValueError("作品划分清单必须已经完成阶段2及泄漏检查")
+            choose_work_split("参数校验", seed=manifest["processing"]["seed"])
+        elif rule != SPLIT_RULE:
             raise ValueError("清单的划分规则不受支持")
-        choose_split("参数校验", seed=manifest["processing"]["seed"])
+        else:
+            choose_split("参数校验", seed=manifest["processing"]["seed"])
     except (KeyError, TypeError) as error:
         raise ValueError("不完整或结构错误的数据处理清单") from error
     return manifest, hashlib.sha256(raw).hexdigest()
@@ -108,10 +121,20 @@ def export_train_text(
                 if not isinstance(record, dict) or not isinstance(record.get("text"), str):
                     raise ValueError("每行必须是含 text 字符串的 JSON 对象")
                 text = record["text"]
-                if (
-                    not text.strip()
-                    or choose_split(text, seed=manifest["processing"]["seed"]) != "train"
-                ):
+                if not text.strip():
+                    raise ValueError("发现空正文或不属于 train 的正文")
+                if manifest["processing"]["split_rule"] == WORK_SPLIT_RULE:
+                    group = record.get("work_group", {})
+                    if group.get("status") != "reviewed" or record.get("status") != "prepared":
+                        raise ValueError("作品划分记录缺少确认的分组/阶段2处理状态")
+                    split = choose_work_split(group.get("id"), seed=manifest["processing"]["seed"])
+                    if record.get("corpus", {}).get("split") != split or (
+                        hashlib.sha256(text.encode()).hexdigest() != record.get("text_sha256")
+                    ):
+                        raise ValueError("作品划分记录的集合/正文摘要不一致")
+                else:
+                    split = choose_split(text, seed=manifest["processing"]["seed"])
+                if not text.strip() or split != "train":
                     raise ValueError("发现空正文或不属于 train 的正文")
                 if EOS in text:
                     raise ValueError("正文包含保留的 EOS 字面量，不能冒充文档边界")
