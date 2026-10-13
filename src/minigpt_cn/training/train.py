@@ -118,7 +118,7 @@ def train(run: RunConfig, out_dir, *, resume=None, stop_after=None):
             for group in optimizer.param_groups
         ],
         "parameters": sum(p.numel() for p in model.parameters()),
-        "time_scope": "training/validation/checkpoint-loop; excludes startup and final file write",
+        "time_scope": "training/validation/checkpoint-loop; includes final checkpoint; excludes startup",
     }
     (out_dir / "run.json").write_text(
         json.dumps(metadata, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"

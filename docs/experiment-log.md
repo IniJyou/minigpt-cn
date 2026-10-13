@@ -1,129 +1,99 @@
-# 实验日志
+# 已验收实验结论
 
-每次实验都复制下面的模板。失败实验也要记录，因为失败原因是项目复盘的重要部分。
+这是历史证据，不是待办清单。**当前任务见 [工作交接](current-work.md)。**
+原逐小步日志与旧命令已从活动文档移除，本地副本在logs/docs_closeout_20261012_v1；
+需要追查旧实验时由用户取用，不要求新agent阅读该目录。
 
-## 2026-10-09：中文 pilot 迁移一致性
+## 中文pilot与迁移（2026-10-09～11）
 
-- 分支：`m1/transformer-core`；本次工作未执行 Git 提交。
-- 来源：作业 pilot 第5000步 checkpoint；项目配置 `configs/pilot_3m.yaml`。
-- 参数：3,737,856；tokenizer：2048 BPE；完整验证：37,826 个目标。
-- WSL PyTorch：2.11.0+cu130；GPU：RTX 4060 Laptop。
-- CUDA/BF16：原实现与项目 loss 均为3.8759773192，PPL=48.2298111859。
-- CPU/FP32：原实现与项目 loss 均为3.8759228132，PPL=48.2271824449。
-- 两种模式均逐块检查完整 logits 与 loss，最大误差为0；共享 Parameter 重载后保持。
-- 7篇验证文档重编码与原 uint16 文件逐 ID 相同；3条 prompt 的 greedy 输出逐 token 相同。
-- 原始报告：`logs/pilot-migration-cuda-bf16.json`、`logs/pilot-migration-cpu-fp32.json`，不提交。
-- 复现、SHA-256、接口和数学复习见 `docs/pilot-migration.md`。
-- 结论：迁移行为一致；生成仍重复/不连贯，不证明正式33M资源或质量。
-- 下一步：建立独立项目 WSL 环境，再接入配置 checkpoint、训练/评估/生成入口和 KV Cache。
+- 原pilot：1000篇Wikipedia，986/7/7；2048 BPE，D256、4层、8头、FF704、context256，
+  共享权重、dropout0，参数3737856，5000步约1024万训练tokens。
+- 迁移验收：全部37826个验证目标、完整logits、共享Parameter和三个prompt的greedy ID一致。
+  同设备/同精度下原实现与项目最大logits差异0；跨FP32/BF16不强求输出相同。
+- CUDA/BF16 loss=3.8759773192、PPL=48.2298111859；
+  CPU/FP32 loss=3.8759228132、PPL=48.2271824449。
+- 原作业checkpoint SHA-256：
+  505fafd02381b8a92dc359a6c7f0801db9f444d23a1e11c7f7123b7eacc61ce0。
+  原2048 tokenizer SHA-256：
+  22089eb3002b9c24509c5bc37cef710994c9ace095f600bb26a71877b6e1ea12。
+- 新配置化checkpoint包含配置、真实步数、优化器、RNG和采样状态；
+  旧checkpoint导入只用于推理，不宣称精确续训。
+- CPU/FP32、CUDA/BF16下，100步连续训练与50步保存后恢复到100步的参数、
+  AdamW状态、RNG、采样状态和训练loss一致。
+- 项目随机初始化100步短运行：完整验证loss由7.681372降到6.660486；
+  不是旧5000步pilot的续训。100步模型主要生成逗号。
+- 旧pilot会重复、语义不连贯，并可能生成非法UTF-8组合；生成接口通过不等于文本质量达标。
 
-## 2026-10-10：步骤2C 配置与 checkpoint
+## KV Cache（2026-10-11）
 
-- 新增统一运行配置与版本1 checkpoint；本次未执行 Git 提交。
-- 训练/数据/模型配置、实际优化器参数组、真实步数、RNG 和采样状态可保存重载。
-- CPU/FP32 与 CUDA/BF16 恢复测试：下一批 ID、dropout 后 loss、下一步参数逐元素相同。
-- 原作业 AdamW 未在本段迁移；测试用原生 AdamW 单独验收 checkpoint 机制。
-- 旧 pilot 显式导入为推理格式，iteration=5000、共享 Parameter 保持，不伪造精确续训状态。
-- 新格式完整验证：37,826 个目标，loss=3.8759773192，PPL=48.2298111859，logits/loss 差异为0。
-- 原 checkpoint SHA-256 仍为 `505fafd02381b8a92dc359a6c7f0801db9f444d23a1e11c7f7123b7eacc61ce0`。
-- 忽略的本地产物：`checkpoints/c_verification/pilot_3m_v1.pt`、`logs/checkpoint-c-verification.json`。
-- 复跑命令见 `docs/step2-guide.md` C段；下一段接入训练与完整评估 CLI。
+- 两份checkpoint、三条prompt、FP32/BF16共12组cached/uncached greedy逐ID一致；
+  超长prompt/窗口重建也一致。缓存不改变文本质量。
+- rebuild_on_slide：达到窗口后重建所有层缓存并重置位置，与原裁剪语义一致；
+  此时没有持续的增量加速。
+- 小pilot独立BF16短prompt基准：RTX4060 Laptop，prompt3、输出64，预热2/测5次；
+  无缓存/缓存时间中位数0.641453/0.596017秒，约1.076倍。
+  这是笔记本小pilot数据，不用于33M训练预算估算。
+- 接口与公式见 [运行参考](runtime-reference.md)。
 
-## 2026-10-10：步骤2D 训练与完整评估入口
+## BPE与pilot处理（2026-10-11）
 
-- 接入原作业 AdamW、余弦调度、全局梯度裁剪和 get_batch，保留公式与中文注释。
-- 原作业 AdamW 对照20次更新：参数和一/二阶矩逐元素完全一致。
-- 训练参数/梯度/矩状态 FP32，CUDA BF16 autocast；完整验证不再只采一个 batch。
-- Windows、独立 WSL：95 passed，Ruff通过；CPU-only CI 跳过2个CUDA测试。
-- CPU/FP32 固定小 batch 60步过拟合：最终 loss 小于初始的10%。
-- CPU/FP32、CUDA/BF16 的真实训练循环：含 dropout 时连续/恢复状态完全一致。
-- 独立评估旧 pilot：全部37,826个目标，loss=3.8759773192044915，PPL=48.2298111859。
-- 新中文短运行：原2048 tokenizer和数据，3,737,856参数、batch8/context256、100步。
-  从随机权重开始，完整验证 loss：0步7.6813722416 -> 50步6.7380504432 -> 100步6.6604861100。
-- 真实CUDA/BF16对照：连续100步 vs 50步保存+恢复到100步，权重/AdamW/RNG/采样状态完全相同；
-  恢复后记录的训练loss和lr也相同。不是原5000步pilot的续训或长期质量实验。
-- 新片段目录拒绝覆盖；恢复只允许改训练终点，语料哈希/PyTorch/其他配置必须相同。
-- loss、梯度、参数、矩状态非有限时退出，无正常最终 checkpoint。
-- 本地产物均忽略：`checkpoints/d_verification/`、`logs/d-pilot-evaluation.json`，
-  完整对照摘要 `logs/d-training-verification.json`；原作业checkpoint校验和未变。
-- 未实现生成CLI、KV Cache、正式配置测速、W&B与best checkpoint策略，未执行Git提交。
+- 清洗、去重和正文哈希划分复现1000篇及986/7/7，正文/顺序与旧pilot一致。
+- 仅train导出：986篇、17677160字节；SHA-256：
+  0e116f4eeb82d56713dadceddc1d50b51f2917a26656ac33762a64010744ed7c。
+- BPE增量计数/倒排索引/优先队列与全扫描参考的词表、有序merges一致。
+  原2048 tokenizer复现2048词条/1791 merges；旧文件没有替换。
+- 英文134042字节/500词表速度用例：作业0.9715秒、项目旧参考1.7150秒、
+  项目优化0.1195秒；单次测量，不代表中文16K速度。
+- 同份pilot train的16K探测：实际16000词条、15743 merges、EOS256；
+  训练148.1185秒，峰值RSS3210.609MiB（约3.14GiB）。
+  探测只有临时内存词表，未保存；正式16K tokenizer尚未交付。
+- 独立哈希16MiB采样得到942篇/16742929字节，独立全排序和重复输出一致；
+  16MiB是BPE文本上限，不是模型100M训练token预算。
+- 复用路径与下一步保存验收见 [数据状态](../data/README.md)、
+  [Tokenizer操作](tokenizer-guide.md)，不重跑300词表教程或已完成的资源探测。
 
-## 2026-10-11：步骤2E 中文生成 CLI
+## Wikimedia工具与质量边界（2026-10-12）
 
-- 接入原generate.py逻辑，增加中文公式/形状注释、ModelOutput、greedy和独立采样Generator。
-- checkpoint配置/tokenizer自动加载，单条、非流式、无KV Cache；BF16前向、FP32概率。
-- 新增51个生成测试；覆盖原temperature/top-p/EOS/裁剪/no_grad以及CLI/UTF-8/seed/错误路径。
-- 最终Windows/独立WSL：146 passed、Ruff通过；隐藏GPU后CPU测试143 passed、3 skipped。
-- 三条prompt的CUDA/FP32：采样64token和greedy32token与原作业参考逐ID相同，原checkpoint哈希未变。
-- 实际CLI读取原5000步pilot和项目100步checkpoint均可生成；不import作业包、不重训。
-- 旧pilot greedy64token存在“他的数学家”等重复；100步模型greedy64token主要输出逗号。
-- 旧pilot FP32采样128token（T=0.8、p=0.9、seed42）出现英文碎片和非法UTF-8，保留1个替换字符。
-  明确记录这些失败样例，不把接口验收当作中文语义质量验收。
-- 生成库推理阶段eval/no_grad，结束恢复原模式；NaN/+Inf/全屏蔽候选明确退出。
-- 原始样例忽略目录 `logs/e_verification/`，生成迁移摘要 `logs/e-generation-verification.json`。
-- 使用独立项目环境，未改作业源码/学习笔记/模型权重，未执行Git写操作。下一步F实现KV Cache。
+- 两个20261001压缩包已独立核对完整性，来源/摘要见 [数据状态](../data/README.md)；
+  不代表全文正文或逐篇许可验收，后续下载由用户执行。
+- 原始XML前100页分别保存67/81篇，不写完整解压XML。
+- Wikipedia全量尝试在至少700000页处由用户中断：墙钟30分46.07秒、
+  峰值RSS87560KiB，无swap；无完整成功manifest，Wikisource全量未执行。
+- 从已有280986条中断候选选择9667篇，正文33553167字节；
+  选择流程与重复输出已复核，未重新核对原修订/重新解压dump。
+- 旧正文质量筛选v2：3741机器候选（8798009正文UTF-8字节）、
+  3872暂缓、2054排除。抽检仍有公式缺失、名称/基字缺词、重复逗号；
+  全部未批准，不能把自动候选当正式训练数据。
+- 提取器local_wikitext_body_v2修复显示字段/基字、局部转换和空标题；
+  可见公式、行内未知模板或明显缺词结构明确拒绝，不模拟完整MediaWiki。
+  旧正文不自动恢复，日期/所有机构模板尚未展开；保守策略可能排除正常行内注释。
+- 原始148篇只读对照：Wikipedia27候选/40排除，Wikisource47候选/34排除；
+  Windows/WSL逐项一致，移除空节53/12个。未批准许可，未重写旧32MiB正文。
+  结果规范JSON SHA-256：
+  9836cd5a06b1673ab0d6af23129b71f1c271dd66fd5825f8e80efb693c9642ab。
+- 提取修复后完整CPU回归：Windows702 passed/10 skipped（27.63秒）、
+  WSL707 passed/5 skipped（75.19秒）；跳过CUDA及Windows符号链接权限，Ruff通过。
+- 这些工具保留复用并冻结扩建，当前不做新全量扫描、通用渲染或审批平台。
+  接口按需查 [数据参考](data-reference.md)。
 
-## 2026-10-11：步骤2F KV Cache 与窗口重建
+## 本轮收尾（2026-10-13）
 
-- 在现有模型上增加可选缓存路径，保留原作业/项目注释与公开forward接口，不改权重键名。
-- 每层保存已做RoPE的K与未旋转的V；新位置offset=历史长度，mask为[new,past+new]。
-- 缓存只用于eval推理，由调用者持有；不进入checkpoint，不跨请求复用、不原地修改旧缓存。
-- 生成默认仍无缓存；`--use-cache` 开启prefill/单token decode，满窗口重建并重置位置。
-- Windows/独立WSL有CUDA：181 passed，Ruff通过；隐藏GPU后CPU：176 passed、5 skipped。
-  本段新增35个用例（33个缓存/基准用例与2个生成入口回归用例）。
-- 真实旧pilot与用户项目100步checkpoint：三条prompt，FP32/BF16，各新增64token，
-  共12组cached/uncached greedy逐ID一致。两份缓存CLI报告也与用户E阶段报告逐ID一致。
-- 旧pilot超长prompt300token/窗口256，在FP32/BF16下各新增8token，重建结果逐ID一致。
-  满窗口基准记录incremental_calls=0、window_rebuilds=7，持久KV=1,048,576 bytes。
-  此时两种模式都计算整个窗口，没有算法上的增量加速，短测量波动不能解释为持续缓存收益。
-- 无缓存完整迁移回归：37,826目标，loss=3.8759773192044915、PPL=48.22981118588135，
-  与作业完整logits/loss差异仍为0，共享参数保持，原作业checkpoint校验和未变。
-- 独立短prompt基准：RTX4060 Laptop、PyTorch2.11.0+cu130、BF16、prompt3token、输出64token，
-  每种模式预热2次/测5次，计时仅覆盖greedy生成、禁用EOS，不含加载/文本编解码。
-  无缓存/缓存总时间中位数0.641453/0.596017秒，约1.076倍；后续token约99.53/107.42 tokens/s，
-  首token约9.09/9.01ms，CUDA allocated峰值31,783,936/31,625,216 bytes；持久KV270,336 bytes。
-  笔记本未锁频，原始trials全部保留；小pilot提升有限，不代表33M吞吐、长期速度或训练预算。
-- 单条非流式生成仍会重复/不连贯；100步模型仍主要输出逗号，缓存不改变语言质量。
-- 报告均在忽略目录 `logs/f_verification/`：`pilot_bf16_isolated.json`、
-  `pilot_bf16_full_window.json`、`uncached_regression.json`、两份cached CLI报告。
-  `pilot_bf16_short.json` 是与测试并行的早期smoke，不用于上述独立基准结论。
-- 用户逐步命令见 `docs/step2-guide.md` F段。未执行Git写操作，未改作业源码/学习笔记/原权重。
-- 下一步由用户复核F，再讨论正式16K tokenizer及33M/512的资源与稳定性试跑；未开始正式训练。
+合并旧逐小步教程为当前交接、Tokenizer操作、运行参考和数据参考；
+实验日志只保留关键证据，路线图改为主线验收顺序。
+原始语料、旧pilot/词表/权重、学习笔记、已验证源码与测试未删除。
+删除17份旧操作教程和2份误建终端输出前，已备份到Git忽略的logs/docs_closeout_20261012_v1。
+Git暂存区不由助手改写，删除/新文档需用户重新暂存并核对后提交；提交/推送/合并均由用户执行。
+收尾后完整CPU回归：Windows702 passed/10 skipped（29.92秒），
+WSL707 passed/5 skipped（69.27秒）；跳过CUDA与Windows符号链接权限，Ruff两边通过。
+28个活动文档本地链接全部有效，docs从19份缩至6份，无旧逐小步教程残留。
+本轮未修改src/tests/configs/pyproject或学习笔记，不启动tokenizer/模型训练。
 
-## 实验模板
+## 后续实验记录模板
 
-### 基本信息
-
-- 实验名称：
-- 日期：
-- Git commit：
-- 运行设备：
-- 配置文件：
-- 随机种子：
-
-### 数据
-
-- 数据版本与校验和：
-- 训练 / 验证 token 数：
-- tokenizer 版本与校验和：
-
-### 训练
-
-- 模型参数量：
-- precision：
-- batch size / gradient accumulation：
-- 学习率与 scheduler：
-- tokens/s：
-- 运行时长与费用：
-
-### 结果
-
-- 最佳 validation loss：
-- BPB / 其他指标：
-- 生成样例位置：
-
-### 观察与下一步
-
-- 哪些设置有效：
-- 哪些设置失败：
-- 下一次只改变哪个变量：
+- 实验名称/日期/Git commit：
+- 数据与tokenizer的来源、版本、SHA-256/实际词表：
+- 模型/精度/设备/seed与训练配置：
+- 训练tokens、唯一数据规模/重复轮数、验证loss及生成结果：
+- 显存峰值/tokens每秒/耗时与实付费用：
+- checkpoint恢复检查、失败情况和已知限制：
+- 结论：本轮验收了什么，哪些不能外推：

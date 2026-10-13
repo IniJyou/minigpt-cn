@@ -1,0 +1,25 @@
+# AutoDL单卡24GB的500步资源验证；仅使用已验收pilot，不能当成正式预训练。
+# batch16为本轮初始方案，实际显存/吞吐/稳定性必须在选定主机上测量。
+model_config: minigpt_33m.yaml
+training:
+  batch_size: 16
+  max_steps: 500
+  learning_rate: 0.0003
+  min_learning_rate: 0.00003
+  warmup_steps: 20
+  lr_decay_steps: 500
+  betas: [0.9, 0.95]
+  eps: 0.00000001
+  weight_decay: 0.1
+  max_grad_norm: 1.0
+  device: cuda
+  precision: bfloat16
+  seed: 42
+  log_interval: 10
+  eval_interval: 100
+  # 资源验证退出时保存final，避免重复写同一步的完整优化器权重。
+  save_interval: 1000
+data:
+  train_path: ../data/processed/pilot_tokens_16k_v1/train.bin
+  valid_path: ../data/processed/pilot_tokens_16k_v1/valid.bin
+  tokenizer_path: ../data/processed/pilot_tokenizer_16k_v1.json
