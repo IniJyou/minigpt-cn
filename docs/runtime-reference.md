@@ -47,7 +47,8 @@ python -m minigpt_cn.training.checkpoint --help
 - 完整验证：覆盖全部next-token目标，按目标数加权平均，不只采一个batch。
 - 新checkpoint保存配置、真实步数、优化器/RNG/采样状态；旧pilot导入仅推理，不能精确续训。
   移动文件后可显式给同版本tokenizer，不能换词表/ID语义。
-- 生成：单条、greedy或temperature/top-p、EOS停止、可选--use-cache；不承诺文本质量。
+- 生成：单条、greedy或temperature/top-p、EOS停止、可选--use-cache及--repetition-penalty（默认1.0）；不承诺文本质量。
+  重复惩罚先于temperature/top-p，对完整prompt与生成历史的唯一ID作用，EOS除外；正logit除以p、负logit乘以p。实际范围与valid对照见[重复诊断](generation-repetition-guide.md)。
 - KV Cache：每层保存旋转后的K与V，新token增量注意力；只用于eval，不跨请求复用。
   满窗口rebuild_on_slide重建缓存/位置，与无缓存裁剪语义一致，满窗口无持续增量加速。
 

@@ -36,6 +36,28 @@ def _check_logits(logits):
         raise FloatingPointError("生成 logits 含 NaN/+Inf 或所有候选均被屏蔽")
 
 
+def _validate_repetition_penalty(penalty):
+    if isinstance(penalty, bool) or not isinstance(penalty, (int, float)):
+        raise TypeError("repetition_penalty 必须为数值")
+    if not math.isfinite(penalty) or penalty < 1:
+        raise ValueError("repetition_penalty 必须为有限数值且 >= 1")
+
+
+def _apply_repetition_penalty(logits, generated, penalty, eos_token_id):
+    """单条历史[1,T]去重后，对logits[1,V]中已出现的ID只惩罚一次。"""
+    if penalty == 1:
+        return logits
+    seen = generated[0].unique()
+    if eos_token_id is not None:
+        seen = seen[seen != eos_token_id]  # EOS保留原分数，避免抑制正常停止。
+    scores = logits.index_select(-1, seen)
+    # 正分数除以p、负分数乘以p，两者都会降低该token的相对分数。
+    adjusted = torch.where(scores < 0, scores * penalty, scores / penalty)
+    result = logits.clone()
+    result.index_copy_(-1, seen, adjusted)
+    return result
+
+
 def _top_p_filter(logits: torch.Tensor, p: float) -> torch.Tensor:
     """保留累计概率首次达到/超过 p 的最小候选集合；不修改输入 logits。"""
     _validate_top_p(p)
@@ -85,6 +107,7 @@ def generate(
     precision: str = "float32",
     generator: torch.Generator | None = None,
     use_cache: bool = False,
+    repetition_penalty: float = 1.0,
 ) -> torch.Tensor:
     """单条生成，返回包含原 prompt 的 [1,prompt_length+generated_length] 整数张量。"""
     # 原作业：prompt_ids 是 token ID，不随模型前向精度转换为 BF16。
@@ -111,6 +134,7 @@ def generate(
     if not math.isfinite(temperature) or temperature <= 0:
         raise ValueError("temperature 必须为有限正数")
     _validate_top_p(top_p)
+    _validate_repetition_penalty(repetition_penalty)
     if not isinstance(greedy, bool):
         raise TypeError("greedy 必须为 bool")
     if not isinstance(use_cache, bool):
@@ -153,6 +177,11 @@ def generate(
             # 项目适配：采样概率在 FP32 中计算；BF16 只影响模型前向。
             logits = logits[:, -1, :].float()
             _check_logits(logits)
+            if repetition_penalty != 1:
+                logits = _apply_repetition_penalty(
+                    logits, generated, repetition_penalty, eos_token_id
+                )
+                _check_logits(logits)
             if greedy:
                 # 项目新增：直接选最高分 ID，不抽样、不消耗采样 RNG，也不应用温度/top-p。
                 next_token = logits.argmax(dim=-1, keepdim=True)  # [1,1]。
@@ -199,6 +228,10 @@ def main(argv=None):
     )
     parser.add_argument("--temperature", type=float, default=1.0)
     parser.add_argument("--top-p", type=float, default=1.0)
+    parser.add_argument(
+        "--repetition-penalty", type=float, default=1.0,
+        help="已出现token的重复惩罚，>=1；1保持原行为，EOS不惩罚",
+    )
     eos = parser.add_mutually_exclusive_group()
     eos.add_argument("--eos-token", default="<|endoftext|>")
     eos.add_argument("--no-eos", action="store_true")
@@ -242,6 +275,7 @@ def main(argv=None):
             precision=args.precision,
             generator=sampler,
             use_cache=args.use_cache,
+            repetition_penalty=args.repetition_penalty,
         )
         full_ids = result[0].tolist()
         new_ids = full_ids[prompt_ids.shape[1] :]
@@ -260,6 +294,8 @@ def main(argv=None):
             "window_policy": "rebuild_on_slide",
             "temperature": args.temperature,
             "top_p": args.top_p,
+            "repetition_penalty": args.repetition_penalty,
+            "repetition_penalty_scope": "full prompt and continuation; EOS excluded",
             "eos_token_id": eos_id,
             "max_new_tokens": args.max_new_tokens,
             "generated_tokens": len(new_ids),

@@ -1,0 +1,42 @@
+{
+  "format_version": 1,
+  "purpose": "bounded_candidate_selection_and_split_review_only",
+  "date": "2026-10-13",
+  "limits": {
+    "max_documents": 80000,
+    "max_raw_body_bytes": 536870912,
+    "max_selected_body_bytes": 134217728,
+    "min_chars": 300,
+    "max_chars": 50000,
+    "max_selection_seconds": 600,
+    "review_articles": 24
+  },
+  "group_seed": 42,
+  "split_seed": 42,
+  "quality_policy": "existing zhwiki_body_quality_v2 without weakening",
+  "additional_holds": [
+    "empty_labeled_parentheses",
+    "empty_title_or_quotation",
+    "known_damaged_ids_from_previous_review",
+    "reserved_eos_literal"
+  ],
+  "ready_for_training": false,
+  "budget": {
+    "stage_total_yuan": 50,
+    "user_handles_overrun_notice": true,
+    "do_not_repeat_billing_questions": true,
+    "keep_instance_running_requested": true
+  },
+  "project_files": {
+    "src/minigpt_cn/__init__.py": "94b02493ae205e15788772c1ac99f8259a91ea446661866e3d098ddf7223efd4",
+    "src/minigpt_cn/config.py": "2433a8d2d8361b222b4afd7189f94d2815e67b7c81f1cb88ef2364df174ab1a2",
+    "src/minigpt_cn/data/__init__.py": "8e837ed9ece266d363ec6a5533dc8656d669ce56a041752822b9a4aeaa1dd75f",
+    "src/minigpt_cn/data/cleaning.py": "1eba1bd8427e3514c5bef4620838c0db4777ec089df956858d4e69df4a4c378a",
+    "src/minigpt_cn/data/splitting.py": "16025cb766d63678b53870ac8421da7b91c635eb05a64976a4e03335fe3a7df3",
+    "src/minigpt_cn/data/prepare.py": "7c58587d92422e576aefd7418b91b87dac76224efaf7fe490b915762cd9e5487",
+    "src/minigpt_cn/data/quality.py": "ba53fe9a5198f386133f352dde1eb1fa1acc9ae5343c82208b32b69c2e2ef572",
+    "src/minigpt_cn/data/candidate_subset.py": "80088e0e1352436b3d69d0c484c16f04568fa50985d2376e44d0baf01175c0e9",
+    "src/minigpt_cn/data/download.py": "e02dd91cfec2abeada5244dc5c3fdeb2c0ac2b86df74434e74536ac4fd9692e0",
+    "src/minigpt_cn/data/parse_xml.py": "6c9b80d2f58981fee0809afc8e79ffd2adf80430bcc22391f46a167cd7c24781"
+  }
+}

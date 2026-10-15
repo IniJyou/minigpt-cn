@@ -1,0 +1,24 @@
+# 部署在/root/autodl-tmp/m3_pretrain_100m_v1；实际约4819万train位置的有界中文预训练实验。
+# 12208 * 16 * 512 = 100007936个处理tokens，约2.075倍算术曝光，不是1亿唯一语料。
+model_config: minigpt_33m.yaml
+training:
+  batch_size: 16
+  max_steps: 12208
+  learning_rate: 0.0003
+  min_learning_rate: 0.00003
+  warmup_steps: 500
+  lr_decay_steps: 12208
+  betas: [0.9, 0.95]
+  eps: 0.00000001
+  weight_decay: 0.1
+  max_grad_norm: 1.0
+  device: cuda
+  precision: bfloat16
+  seed: 42
+  log_interval: 20
+  eval_interval: 500
+  save_interval: 2000
+data:
+  train_path: ../m3_training_input_frozen_v1/tokens/train.bin
+  valid_path: ../m3_training_input_frozen_v1/tokens/valid.bin
+  tokenizer_path: ../minigpt-cn-autodl-500-v2/data/processed/pilot_tokenizer_16k_v1.json

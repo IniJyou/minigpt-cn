@@ -7,7 +7,13 @@ import pytest
 import torch
 
 from minigpt_cn.config import ModelConfig
-from minigpt_cn.inference.generate import _decode_report, _top_p_filter, generate, main
+from minigpt_cn.inference.generate import (
+    _apply_repetition_penalty,
+    _decode_report,
+    _top_p_filter,
+    generate,
+    main,
+)
 from minigpt_cn.model import MiniGPT, ModelOutput
 from minigpt_cn.tokenizer import BPETokenizer
 from minigpt_cn.training.checkpoint import file_sha256, save_checkpoint
@@ -146,6 +152,65 @@ def test_greedy_uses_argmax_without_sampling_or_consuming_rng(model, prompt, mon
     )
 
 
+def test_repetition_penalty_sign_unique_ids_eos_and_input_preserved():
+    logits = torch.tensor([[4.0, -2.0, 0.0, 5.0, 3.0]])
+    history = torch.tensor([[0, 1, 0, 1, 2, 3]])
+    before_logits, before_history = logits.clone(), history.clone()
+    actual = _apply_repetition_penalty(logits, history, 2.0, 3)
+    torch.testing.assert_close(actual, torch.tensor([[2.0, -4.0, 0.0, 5.0, 3.0]]))
+    assert torch.equal(logits, before_logits) and torch.equal(history, before_history)
+    assert _apply_repetition_penalty(logits, history, 1.0, 3) is logits
+
+
+def test_repetition_penalty_breaks_constant_logits_loop(model, prompt, monkeypatch):
+    monkeypatch.setattr(model, "forward", fixed_forward([0, 2.0, 3.0, 2.5]))
+    assert generate(model, prompt, 2, greedy=True).tolist() == [[1, 2, 2, 2]]
+    # 历史中已有ID2，惩罚后未出现的ID3胜出；出现ID3后则不再重复ID3。
+    assert generate(model, prompt, 2, greedy=True, repetition_penalty=2).tolist() == [[1, 2, 3, 2]]
+
+
+def test_repetition_penalty_sampling_probabilities(model, prompt, monkeypatch):
+    monkeypatch.setattr(model, "forward", fixed_forward([0, 2.0, -1.0, 1.0]))
+    captured = []
+
+    def capture(probs, num_samples, generator=None):
+        captured.append(probs.clone())
+        return torch.tensor([[3]])
+
+    monkeypatch.setattr(torch, "multinomial", capture)
+    generate(model, prompt, 1, repetition_penalty=2)
+    torch.testing.assert_close(captured[0], torch.tensor([[0.0, 1.0, -2.0, 1.0]]).softmax(-1))
+
+
+@pytest.mark.parametrize("penalty,error", [
+    (True, TypeError), ("1.1", TypeError), (0.9, ValueError),
+    (float("nan"), ValueError), (float("inf"), ValueError),
+])
+def test_invalid_repetition_penalty_rejected(model, prompt, penalty, error):
+    with pytest.raises(error, match="repetition_penalty"):
+        generate(model, prompt, 1, repetition_penalty=penalty)
+
+
+def test_repetition_penalty_one_exactly_preserves_seeded_generation(model, prompt):
+    expected = generate(model, prompt, 7, generator=torch.Generator().manual_seed(42))
+    actual = generate(model, prompt, 7, repetition_penalty=1.0,
+                      generator=torch.Generator().manual_seed(42))
+    assert torch.equal(actual, expected)
+
+
+def test_repetition_penalty_keeps_eos_stop(model, prompt, monkeypatch):
+    monkeypatch.setattr(model, "forward", fixed_forward([0, 1.0, 2.0, 3.0]))
+    with_eos_in_prompt = torch.tensor([[1, 3]])
+    result = generate(model, with_eos_in_prompt, 3, 3, greedy=True, repetition_penalty=10)
+    assert result.tolist() == [[1, 3, 3]]
+
+
+def test_repetition_penalty_cached_and_uncached_match_across_sliding_window(model, prompt):
+    plain = generate(model, prompt, 7, greedy=True, repetition_penalty=1.1, use_cache=False)
+    cached = generate(model, prompt, 7, greedy=True, repetition_penalty=1.1, use_cache=True)
+    assert torch.equal(plain, cached)
+
+
 def test_seeded_sampler_repeats_and_does_not_consume_global_rng(model, prompt):
     state = torch.get_rng_state().clone()
     a = generate(model, prompt, 8, generator=torch.Generator().manual_seed(31))
@@ -260,6 +325,16 @@ def test_cli_sampling_seed_reproduces_raw_ids(checkpoint):
     ]
     a, b = main(args), main(args)
     assert a["full_ids"] == b["full_ids"] and a["generated_tokens"] == 8
+
+
+def test_cli_repetition_penalty_is_applied_and_recorded(checkpoint, tmp_path):
+    path, _ = checkpoint
+    output = tmp_path / "penalty.json"
+    report = main(["--checkpoint", str(path), "--prompt", "中文", "--greedy",
+                   "--max-new-tokens", "3", "--repetition-penalty", "1.1", "--output", str(output)])
+    assert report["repetition_penalty"] == 1.1
+    assert report["repetition_penalty_scope"] == "full prompt and continuation; EOS excluded"
+    assert json.loads(output.read_text(encoding="utf-8")) == report
 
 
 @pytest.mark.parametrize(
