@@ -39,6 +39,25 @@
 **仓库不包含权重、tokenizer产物或数据下载包。** 只有代码的新克隆不能直接生成；缺产物时不自动换词表、训练替代模型或启动云作业。
 M4文档命令的CPU8-token生成已实际执行，PowerShell5.1/7语法通过；它验证命令与文件链路，不代替质量评估。推理不需要原云端绝对路径或训练数据，精确续训仍受原版本/配置/数据契约约束。
 
+在项目根目录打开PowerShell，完成上述产物核对后，可反复输入自己的续写前缀（下例使用CUDA/BF16）：
+
+```powershell
+while ($true) {
+    $m4Prompt = Read-Host '输入续写前缀（/exit退出）'
+    if ($m4Prompt -eq '/exit') { break }
+    if ([string]::IsNullOrWhiteSpace($m4Prompt)) { continue }
+    & .\.venv\Scripts\python.exe -B -m minigpt_cn.inference.generate `
+      --checkpoint 'logs/m3_training_report/m3_pretrain_100m_return_v1/ckpt_final.pt' `
+      --tokenizer 'data/processed/pilot_tokenizer_16k_v1.json' `
+      --prompt $m4Prompt --max-new-tokens 128 `
+      --device cuda --precision bfloat16 --seed 42 `
+      --temperature 0.8 --top-p 0.9 --repetition-penalty 1.0
+    if ($LASTEXITCODE -ne 0) { break }
+}
+```
+
+仅用CPU时，将`--device cuda --precision bfloat16`改为`--device cpu --precision float32`。用户已完成自由提示词试用；这些输出用于观察续写表现，不能单独证明泛化能力或总体生成质量。
+
 ## 项目结构
 
 ```text
@@ -57,11 +76,11 @@ docs/assets/         本项目派生的PNG/SVG训练曲线
 | 阶段 | 状态 |
 | --- | --- |
 | M0–M2 | 核心实现、16K tokenizer与33M短训练/恢复闭环已验收 |
-| M3 33M Pretraining | 固定训练、评估与优化实验结束；生成限制保留，用户确认已完成远端收尾 |
-| M4 Portfolio Release | 展示页、图、模型卡、复现与验收说明已交付，等待用户整体验收/Git发布 |
-| M5 LoRA Chat and Evaluation | 独立0.6B阶段，M4验收后另行开展 |
+| M3 33M Pretraining | 固定训练、评估与优化实验已收尾；保留原final基线和生成质量限制 |
+| M4 Portfolio Release | 展示页、图、模型卡与本地复现已发布；用户完成自由提示词试用，[PR #6](https://github.com/IniJyou/minigpt-cn/pull/6)已合并 |
+| M5 LoRA Chat and Evaluation | 独立0.6B阶段，尚未启动，目标与范围另行确定 |
 
-**继续任务先读[当前工作与交接](docs/current-work.md)，这是唯一下一任务入口。** 用户执行Git写操作，助手不自动提交、推送或合并；用户报告的远端收尾与本轮独立核验区分记录。
+**继续任务先读[当前工作与交接](docs/current-work.md)，这是唯一下一任务入口。** 协作与Git操作约定见[AGENTS.md](AGENTS.md)。
 
 ## 文档与检查
 
@@ -78,7 +97,7 @@ $env:CUDA_VISIBLE_DEVICES = '-1'
 .\.venv\Scripts\python.exe -m pytest -q --tb=short
 ```
 
-M3收尾轮完整CPU回归为Windows736 passed/10 skipped、WSL741 passed/5 skipped；M4本轮只做展示构建、结果/文档核对与Ruff，不冒称重跑完整回归。历史原始检查见[M3收尾记录](docs/m3-closeout.md#本轮检查)。
+历史完整CPU回归为Windows736 passed/10 skipped、WSL741 passed/5 skipped，两边Ruff通过。M4交付时另做展示构建、结果/文档核对与Ruff；本次README更新不重跑模型或完整回归。历史原始检查见[M3收尾记录](docs/m3-closeout.md#本轮检查)。
 
 ## 许可与发布边界
 
