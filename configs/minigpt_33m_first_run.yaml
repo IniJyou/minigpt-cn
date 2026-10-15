@@ -1,0 +1,24 @@
+# 部署至/root/autodl-tmp/m3_first_train_v1，与既有数据/项目目录并列。
+# 约445万train token位置上的有界中文实验，2000步，不宣称1亿唯一语料。
+model_config: minigpt_33m.yaml
+training:
+  batch_size: 16
+  max_steps: 2000
+  learning_rate: 0.0003
+  min_learning_rate: 0.00003
+  warmup_steps: 100
+  lr_decay_steps: 2000
+  betas: [0.9, 0.95]
+  eps: 0.00000001
+  weight_decay: 0.1
+  max_grad_norm: 1.0
+  device: cuda
+  precision: bfloat16
+  seed: 42
+  log_interval: 20
+  eval_interval: 250
+  save_interval: 500
+data:
+  train_path: ../m3_candidate_tokens_16k_v1/tokens/train.bin
+  valid_path: ../m3_candidate_tokens_16k_v1/tokens/valid.bin
+  tokenizer_path: ../minigpt-cn-autodl-500-v2/data/processed/pilot_tokenizer_16k_v1.json

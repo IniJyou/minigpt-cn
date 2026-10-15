@@ -1,0 +1,95 @@
+{
+  "format_version": 1,
+  "kind": "formal_source_selection",
+  "status": "metadata_pinned_actual_shard_review_pending",
+  "repository": "wikimedia/wikipedia",
+  "config": "20231101.zh",
+  "revision": "b04c8d1ceb2f5cd4588862100d08de323dccfbaa",
+  "metadata_checked_date": "2026-10-13",
+  "metadata_origin": "Hugging Face repository API; lfs.oid is expected file SHA-256, not Git blob oid or xetHash",
+  "metadata_api": "https://huggingface.co/api/datasets/wikimedia/wikipedia/tree/b04c8d1ceb2f5cd4588862100d08de323dccfbaa/20231101.zh?recursive=false&expand=false",
+  "dataset_card": "https://huggingface.co/datasets/wikimedia/wikipedia/blob/b04c8d1ceb2f5cd4588862100d08de323dccfbaa/README.md",
+  "upstream_declared_license": [
+    "cc-by-sa-3.0",
+    "gfdl"
+  ],
+  "license_review": {
+    "dataset_declaration": "recorded at pinned revision",
+    "article_attribution": "preserve original id/url/title and dataset date/revision; text modifications must be recorded",
+    "exceptions": "Imported text and individual-page exceptions must remain reviewable; dataset declaration is not per-document legal approval",
+    "references": [
+      "https://dumps.wikimedia.org/legal.html",
+      "https://foundation.wikimedia.org/wiki/Policy:Terms_of_Use#7._Licensing_of_Content"
+    ]
+  },
+  "schema_fields": [
+    "id",
+    "url",
+    "title",
+    "text"
+  ],
+  "upstream_document_count": 1384748,
+  "upstream_split": "train; upstream single split is not the project's final train/valid/test assignment",
+  "files": [
+    {
+      "path": "20231101.zh/train-00000-of-00006.parquet",
+      "name": "train-00000-of-00006.parquet",
+      "bytes": 587109027,
+      "sha256": "853ddf4a138c792ad7386d6de831788f96326c03e1e3349f7a315498392e8b56",
+      "url": "https://huggingface.co/datasets/wikimedia/wikipedia/resolve/b04c8d1ceb2f5cd4588862100d08de323dccfbaa/20231101.zh/train-00000-of-00006.parquet"
+    },
+    {
+      "path": "20231101.zh/train-00001-of-00006.parquet",
+      "name": "train-00001-of-00006.parquet",
+      "bytes": 263629009,
+      "sha256": "038b08e5aae38b5a1671794cee3fa0d4952c0d00fa0890a903d2de3f3fe5f703",
+      "url": "https://huggingface.co/datasets/wikimedia/wikipedia/resolve/b04c8d1ceb2f5cd4588862100d08de323dccfbaa/20231101.zh/train-00001-of-00006.parquet"
+    },
+    {
+      "path": "20231101.zh/train-00002-of-00006.parquet",
+      "name": "train-00002-of-00006.parquet",
+      "bytes": 126796358,
+      "sha256": "ec8f6c0dd1418b8fcd454278fb4f2bc7cd0ce8312f29c80b672533942601338f",
+      "url": "https://huggingface.co/datasets/wikimedia/wikipedia/resolve/b04c8d1ceb2f5cd4588862100d08de323dccfbaa/20231101.zh/train-00002-of-00006.parquet"
+    },
+    {
+      "path": "20231101.zh/train-00003-of-00006.parquet",
+      "name": "train-00003-of-00006.parquet",
+      "bytes": 262039932,
+      "sha256": "4884e4933fa91f46dc9bf711db8be07f368da59b8cfc2e00e895a65a3284cbb1",
+      "url": "https://huggingface.co/datasets/wikimedia/wikipedia/resolve/b04c8d1ceb2f5cd4588862100d08de323dccfbaa/20231101.zh/train-00003-of-00006.parquet"
+    },
+    {
+      "path": "20231101.zh/train-00004-of-00006.parquet",
+      "name": "train-00004-of-00006.parquet",
+      "bytes": 256719920,
+      "sha256": "415a5cd235a359a009c6bd6d488c3d9ee81ed3220b9f33fd04214558bc5150cd",
+      "url": "https://huggingface.co/datasets/wikimedia/wikipedia/resolve/b04c8d1ceb2f5cd4588862100d08de323dccfbaa/20231101.zh/train-00004-of-00006.parquet"
+    },
+    {
+      "path": "20231101.zh/train-00005-of-00006.parquet",
+      "name": "train-00005-of-00006.parquet",
+      "bytes": 224856014,
+      "sha256": "803ae27118b1daf9be4403b57b679b8ce065fbffdfdea0c33c517255c17478df",
+      "url": "https://huggingface.co/datasets/wikimedia/wikipedia/resolve/b04c8d1ceb2f5cd4588862100d08de323dccfbaa/20231101.zh/train-00005-of-00006.parquet"
+    }
+  ],
+  "total_all_shards_bytes": 1721150260,
+  "this_round": {
+    "selected_filename": "train-00000-of-00006.parquet",
+    "download_max_bytes": 587109027,
+    "max_sampled_articles": 24,
+    "sampling": "first 8 rows of first/middle/last distinct row group, no full article scan",
+    "excerpt_characters": 1800,
+    "pyarrow_version": "26.0.0",
+    "purpose": "source identity and bounded sample review only"
+  },
+  "ready_for_training": false,
+  "budget": {
+    "total_yuan": 50,
+    "includes_instance_retention": true,
+    "user_reported_spend_at_prior_checkpoint_yuan": 3.09,
+    "keep_instance_running_requested": true
+  },
+  "trained_tokenizer_sha256": "21c99525eb12462f6ac26bc78a1487c61c8cbdc2c98c6709cd5b1b9988374470"
+}

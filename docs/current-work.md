@@ -1,113 +1,54 @@
 # 当前工作与交接
 
-更新：2026-10-13。**新会话先读本页；不要按旧逐小步教程继续支线。**
+更新：2026-10-15。**本页是唯一的下一任务入口；参考文档与实验日志不是待办清单。**
 
-## 主线与唯一下一任务
+## 当前阶段与唯一下一任务
 
-16K tokenizer、同版本pilot三集合uint16及33M本地短训练/恢复均已保存验收，数据工具扩建继续冻结。
-AutoDL 500步、下载原始产物和费用/实例状态记录均已收尾。
-正式语料与首轮预训练的50元准备方案已保存：[正式预训练方案](formal-pretraining-plan.md)。
-唯一下一任务：**固定正式语料来源版本、许可与样本验收包**；本轮不启动正式训练。
-优先候选是Wikimedia已清洗中文Wikipedia Parquet（20231101.zh），固定revision/逐文件摘要后由用户获取；
-复用既有清洗/划分和16K编码，不重新建设维基渲染或审批平台，旧20261001 raw与pilot保留。
-用户总预算50元，保守按包含已报告3.09元解释；余额基准46.91元，保留实例费用也计入总额。
-2026-10-13用户明确要求暂不关机以保留稀缺机器，实例继续运行；此决定保留到用户另行改变。
-正式训练仍使用configs/minigpt_33m.yaml、已验收16K tokenizer、新正式三集合和同一云端框架。
-用户已租用单卡vGPU-32GB实例，页面报价1.58元/时，数据盘50GB；不再沿用此前无库存的4090候选。
-2026-10-13用户回传硬件核对通过：实际GPU为RTX4080 SUPER、31.48GiB、计算能力8.9；
-Python3.12.3、PyTorch2.8.0+cu128、CUDA runtime12.8，BF16支持与小矩阵运算通过。
-已准备configs/minigpt_33m_autodl_500.yaml（batch16/context512/BF16、500步）与
-logs/autodl_500_prepare_v2上传包；操作见 [AutoDL资源验证](autodl-resource-guide.md)。
-用户已回传云端上传预检查PASS：配置SHA-256为
-c6f26c512959ce1e472d2ad02272c2ffb7eef30d0fe74f901bf069f6c3b227fb，
-包清单/tokenizer/token数据清单摘要均与本地一致；batch16/context512/max_steps500。
-云端定向CPU检查43 passed/2 skipped（3.53秒），Ruff通过；两项为隐藏CUDA后的GPU测试跳过。
-项目依赖经清华PyPI镜像安装成功：regex2026.9.29、OpenCC1.4.2、pytest9.1.1、Ruff0.17.0。
-用户已回传500步completed报告，配置/包清单/tokenizer/token数据清单摘要经本轮本地重新核对一致；
-33104384参数、4096000训练tokens，完整valid覆盖25271目标，loss从9.7841降至6.7017。
-程序总调用117.915秒；训练区间37969 tokens/s，含验证/最终保存的循环35139 tokens/s；
-PyTorch峰值分配/保留显存5.804/6.242GiB（不含驱动或其他进程）。
-报告核对PASS记录于logs/autodl_500_report_review_v1；其中resources.user_report.json是用户贴文的规范化副本，
-不是下载的云端原始文件。用户随后已取回五份原始文件至logs/autodl_500_v1；
-本轮19项独立核对PASS，记录于该目录artifact_acceptance.json。
-包括五份文件摘要、原始报告/配置/输入版本、50条train及6次完整valid、两种吞吐复算、
-stdout与metrics一致、checkpoint CPU重载/共享权重、500步及有限FP32优化器矩状态。
-Windows本地PyTorch2.14.0+cu126仅用于CPU读取验收，未重跑训练/验证或宣称跨版本精确续训。
-用户已报告累计费用3.09元，并明确保留实例运行继续主线；该金额不是最终账单，关机不是本轮验收条件。
-收尾记录在logs/autodl_500_v1/closeout.json，原始验收记录的pending字段为当时快照，由收尾记录补充。
-云端报告checkpoint SHA-256：4d976c1407fa1d9b0fd9914bc6dfe93bcfac7d6203b2ab82a11fc6ddeb595540。
-本地checkpoint实际摘要已与上述云端摘要一致；500步资源任务完整验收，已有运行不重复。
-本轮已完成预算/来源准备方案，未新下载、处理正式语料或启动训练；下一项只做正式来源验收包。
-正式语料扩充/1亿token预训练与展示随后开展；独立0.6B LoRA最后开展。
+用户已决定结束本批33M优化并授权M3收尾。**M3本地实验与文档已收尾，生成连贯性不足作为最终限制保留；下一阶段为M4项目展示。** 不再将展示质量达标设为无限追加M3训练的条件。
+详细结论、证据、检查与Git操作说明见 [M3阶段收尾](m3-closeout.md)。Git提交、推送、PR/CI、合并和GitHub M3里程碑关闭仍由用户执行；助手未执行这些写操作，也未核实本轮远端状态。
 
-## 已完成与未完成
+唯一下一任务：准备**M4模型卡与本地复现说明**，定位为33M中文文本生成实验，如实展示训练指标、固定输出与能力限制。暂不训练、扩语料、搜索解码参数、实现新服务或进入LoRA。每轮一个可验收产物，按用户下一次授权开展。
 
-- 已完成：模型/权重共享/dropout、BPE增量训练与编解码、训练/完整评估、checkpoint恢复、
-  生成和KV Cache；模型与旧中文pilot的完整logits/loss/共享关系一致。
-- 已完成但冻结：Wikimedia下载/流式XML、正文提取v2、预算子集、质量筛选、作品级去重划分。
-  代码/测试留在项目供后续复用，不要求当前重做或扩建。
-- 已完成：16000词表tokenizer保存/重载/往返验收，15743 merges、EOS ID256，训练122.11秒。
-  同版本三集合uint16编码51.57秒；全部1000篇已用项目读取器从磁盘解码核对正文/EOS/LF。
-- 已完成：33M实际参数33104384，WSL/RTX4060/BF16/batch2/context512短训练100步。
-  50步保存→100步恢复与连续100步的权重/优化器/采样器/RNG完全一致；新进程重载验证相同。
-  完整valid loss=9.7909→8.1517→8.0524，全部25271个目标；训练日志区间吞吐约7637 tokens/s。
-  PyTorch最大分配/保留显存1.175/1.227GiB；范围与复现见 [33M短验证](33m-short-validation.md)。
-- 已验收：AutoDL/RTX4080 SUPER、BF16/batch16/context512的500步资源验证与本地原始产物；费用3.09元时点及继续运行决定已记录。
-- 已准备：50元总预算、首轮1亿训练tokens的预算/来源方案；正文与许可/编码未验收，不直接训练。
-- 未完成：正式来源验收、正式三集合/16K编码、正式预训练与展示。
-- 旧32MiB正文仍有信息损失，所有自动候选未审批，不直接训练；
-  修提取器不会自动修复旧文本。未来需要新正式语料时另定页面/正文预算，不全站扫描。
-- M2基础实现、pilot数据和本地训练闭环已验收；正式语料规模/许可验收和M3仍未完成。
+## M3最终结论
 
-## 当前可用输入
+- 模型33104384参数，8层/8头、context512，RMSNorm/RoPE/SwiGLU、权重共享。
+- 同版16K tokenizer：16000词表（含EOS256）、15743 merges；旧2048 tokenizer/权重不混用。
+- 最终冻结train为73520篇/48187994个token位置；valid/test为461/450篇、297390/251517个位置。训练仅使用train。
+- 原final从随机权重训练12208步，处理100007936 tokens，约2.075倍算术曝光；不是1亿唯一语料token或实际epochs。训练约49.52分钟，资源统计见 [原实验报告](m3-experiment-report.md)。
+- 原final本地独立valid/test loss=3.962893003020671/3.9957795353415366，完整覆盖297389/251516目标。12条固定生成全部保留，明显重复、离题或句意混乱，展示质量未通过。
+- 原始预测/生成、缓存与因果前缀对照未在固定样本发现对应链路错误；不能据此断言唯一质量原因。可选重复惩罚默认1.0；固定采样惩罚1.1缓解表面重复，但连贯性不足，见 [生成诊断](generation-repetition-guide.md)。
+- 有界续训仅将12208步延至14208，追加2000步/16384000 tokens，保留原调度，追加LR均3e-5；恢复原优化器、采样器与RNG。原兼容云端训练，本地不同Torch版本不绕过resume保护。
+- 两模型同一PC重新完整valid：3.962893003020671→3.9458841234747717，下降0.017008879545899358，达到预定0.01门槛；原valid存档差0，原18条采样ID全部精确重现。
+- 同6篇valid原64-token前缀×种子42/43/44，temperature0.8/top-p0.9/penalty1.1/BF16/无缓存/新增最多128，每模型18条。完整18对审阅：1改善、12无明确整体变化、5变差，未达至少10改善/至多3变差。完整重复均值7.780309%→7.655319%，共同正文长度后6.523893%→7.704540%；不能凭降loss或短输出接纳生成质量。
+- 语义审阅是助手逐对定性判断，非盲评、独立人工或事实准确率；6篇valid反复查看，不宣称泛化提升。原test仅用于原final一次报告，不参与续训对照、调参或选择。
+- 按冻结协议停止，保留两份权重和全部结果；不追加训练、挑周期checkpoint、扩大语料或搜索参数。M3工程实验完成，生成质量限制如实保留，M4负责展示与复现交付。
 
-data/processed/m2_user_bpe_16k_probe_text/export_manifest.json与train.txt：
-986篇train、17677160字节，SHA-256
-0e116f4eeb82d56713dadceddc1d50b51f2917a26656ac33762a64010744ed7c。
-来源为data/processed/m2_user_pilot_jsonl/manifest.json，固定986/7/7三集合。
-新会话重新核对实际文件及清单；本批用于验证闭环，不是正式语料规模/许可验收。
-旧2048 tokenizer与checkpoint不替换，不与新16K token ID混用。
+## 当前可用产物
 
-已验收tokenizer：data/processed/pilot_tokenizer_16k_v1.json，SHA-256
-21c99525eb12462f6ac26bc78a1487c61c8cbdc2c98c6709cd5b1b9988374470。
-已验收token目录：data/processed/pilot_tokens_16k_v1，含三份bin、manifest.json与acceptance.json。
-train/valid/test token数：4168196/25272/42263；文档/EOS数仍为986/7/7。
-重载步骤见 [Tokenizer操作](tokenizer-guide.md)，编码与独立读回见 [Token编码验收](token-encoding-guide.md)。
-已有输出不覆盖、不盲目重训/重编码；模型数据以新token目录为准，旧pilot仅保留。
+| 产物 | 本地位置 / 版本 |
+| --- | --- |
+| tokenizer | data/processed/pilot_tokenizer_16k_v1.json；SHA=21c99525eb12462f6ac26bc78a1487c61c8cbdc2c98c6709cd5b1b9988374470 |
+| 原12208步final | logs/m3_training_report/m3_pretrain_100m_return_v1/ckpt_final.pt；SHA=f563104f903b0b174a355055d965a33e1c815602124627fdfeab5494524fad2d |
+| 续训14208步final | logs/m3_contiune_2000_report/ckpt_final.pt；SHA=abd3d468c09b724c746e66bac769487073b17e734c8fc3f7f18956bc5bbf9f48；保留实际目录拼写 |
+| 本地valid/test | data/processed/m3_final_eval_inputs_v1；本批对照未读取test，最终train.bin仍在云端 |
+| 原训练/独立评估验收 | logs/m3_training_report/artifact_acceptance.json；logs/m3_final_local_evaluation_v1/artifact_acceptance.json |
+| 续训原件/独立对照验收 | logs/m3_contiune_2000_report/artifact_acceptance.json（35项）；logs/m3_continuation_comparison_v1/artifact_acceptance.json（31项） |
+| 全部18对文本与审阅 | logs/m3_continuation_comparison_v1/comparison_review.md、semantic_review.json/md |
+| 本轮收尾证据与用户Git步骤 | logs/m3_closeout_20261015_v1 |
 
-33M短运行配置：configs/minigpt_33m_short_run.yaml，引用唯一模型配置，100步调度、50步退出恢复。
-验收目录：checkpoints/m3_33m_short_v1，含first50/resumed100/continuous100三段及acceptance.json。
-同一WSL项目环境PyTorch2.11.0+cu130完成训练/恢复/独立验证；Windows2.14.0+cu126不能当同版本精确续训。
-这些新checkpoint是pilot短验证产物，旧checkpoint不替换。下一阶段实测资源与费用，不直接开始正式预训练。
+原M3报告完整字节归档到logs/m3_closeout_20261015_v1/m3-experiment-report.original.md，SHA=dfb21c08006423644df8173ce7a36c725bb1480eccd8ab01a688b1a447461ded。发布文档仅删除文件末尾一个多余空行，19255字节、新SHA=341f5a1dc3bc817383c0c3ca731f5a67fd64b5fbc63ea9a386ccb11bd0968b1b，内容与12条样例不变。旧协议/验收摘要对照原归档，保留历史快照，不能修改旧协议使失败对照变通过。
+原100M完整输入冻结清单SHA=60ff2f6cdca5b240803e4fa63fad31a87905c6907414dd12f125dbc3677682fe。云端实际路径为/root/autodl-tmp/m3_training_input_frozen_v1/manifest.json；本地小报告导出副本名为frozen_manifest.json，不能据导出名误判云端输入缺失。
+详细来源/编码/训练步骤按需查README文档导航；不重做已验收阶段。数据、tokenizer、checkpoint、日志与缓存均Git忽略，不提交或自动删除。
 
-## 环境与边界
+## 工作区、检查与协作边界
 
-项目：D:\aiworkspace\transformer；WSL：/mnt/d/aiworkspace/transformer。
-已有项目环境：/home/luoyu/.venvs/minigpt-cn；本地RTX4060 Laptop 8GB、约31GB内存。
-用户执行所有下载/安装/Git写操作；不改作业仓库、学习笔记、旧权重与数据。
-缺少真实输入或依赖时只报告具体阻塞，不重启整个数据平台建设。
-接口按需查 [运行参考](runtime-reference.md)、[数据参考](data-reference.md)；
-历史数字见 [实验结论](experiment-log.md)，不会变成新的任务指令。
+开始收尾时分支m2/tokenizer-data、HEAD=7f4cc52，暂存区为空；用户随后已运行兼容脚本，创建codex/m3-closeout并暂存33份指定文件。当前补充修正报告末尾空行及两份说明，助手未修改暂存区；用户只重新暂存docs/m3-experiment-report.md、docs/m3-closeout.md和docs/current-work.md后检查，不重跑暂存脚本。保留无关未跟踪文件，不改main，不使用git add .、清空暂存区或自动回滚。
+M2历史Git收尾：提交7f4cc52，[PR #4](https://github.com/IniJyou/minigpt-cn/pull/4)已合并，merge commit25cc933，M2里程碑已关闭；不是本轮M3提交或当前远端检查结果。
+本轮CPU完整回归/Ruff与文档、产物摘要和Git边界检查见 [M3收尾说明](m3-closeout.md#本轮检查)及logs/m3_closeout_20261015_v1/closeout_acceptance.json。历史702/707、724/729及各轮定向结果不能冒称本轮运行。
+本页收尾前内容已原样备份到logs/m3_closeout_20261015_v1/current-work.before.md，仅供追查；不作为后续任务入口。
 
-## 已有暂存改动与用户Git操作
-
-本次Git收尾开始时分支m2/tokenizer-data、HEAD=cf1c7ea，包含以前已暂存的源码/测试/文档。
-用户2026-10-13明确授权“提交一下M2，完成GitHub的M2”，本次授权允许助手提交/推送该分支，
-通过PR与CI完成合并，并关闭M2里程碑；其他会话仍按AGENTS.md的默认Git约定执行。
-GitHub M2是第3号里程碑，M3正式预训练仍未完成；不因已有500步资源结果关闭M3。
-提交包含M2实现/编码测试、已冻结的数据工具、活动文档收尾及33M/云端验证配置和结果说明。
-tokenizer、语料、checkpoint、日志、历史备份仍Git忽略；那份无关未跟踪文件原样保留。
-不切换/直接改写本地main，不清空暂存区、不强推、不删除分支；实际远端完成状态以PR及里程碑为准。
-
-本次Git提交前重新运行完整CPU回归：Windows724通过/10跳过（28.77秒），
-WSL729通过/5跳过（73.95秒），两边Ruff通过；不是复述下面的历史702/707结果。
-原始检查记录保存到Git忽略的logs/m2_git_closeout_20261013。
-
-旧教程及两份误建终端输出已备份到logs/docs_closeout_20261012_v1，Git忽略、不提交。
-原始下载/中断文件/旧pilot/学习笔记未删除。以后只读活动文档，不读旧备份继续任务。
-文档收尾轮历史完整CPU检查：Windows702通过/10跳过，WSL707通过/5跳过，两边Ruff通过；
-活动文档28个本地链接均有效。跳过项为CUDA及Windows符号链接权限，不是数据训练验收。
-本次编码轮实际定向检查：Windows53通过/1跳过，WSL54通过，两边Ruff通过；
-未重跑完整回归。新token数据独立全量读回验收PASS，详细结果在新token目录acceptance.json。
-本次33M轮实际定向CPU检查：Windows34通过/2跳过、WSL34通过/2跳过，两边Ruff通过，未重跑完整回归。
-真实33M三段GPU运行及独立重载完整验证均通过，详情在checkpoints/m3_33m_short_v1/acceptance.json。
+项目D:\aiworkspace\transformer；Windows环境.venv，WSL项目环境/home/luoyu/.venvs/minigpt-cn。作业环境/home/luoyu/.venvs/cs336-basics保持独立。当前PC Python3.12.4/Torch2.14.0+cu126，原云端Python3.12.3/Torch2.8.0+cu128；CPU读取/本地推理兼容不代表跨版本精确resume。
+中文沟通，用户执行所有下载、安装与Git写操作；Windows Git HTTPS第一次远程尝试前require_escalated。保留旧pilot/tokenizer/权重、作业仓库、CS336_note.md和原始诊断产物。
+数据工具已完成并冻结扩建，通用质量/隔离门槛不放宽；不自开维基模板、章节分析、全站扫描或审批平台建设。旧logs/docs_closeout_20261012_v1不读作任务计划。
+预算50元含实例保留与历史费用，用户明确不再询问账单，超额由用户告知；本轮不操作云实例，也不将程序耗时当实际账单。
+独立0.6B LoRA在M4之后，使用基座自己的权重与tokenizer，不套用33M的16K token ID。

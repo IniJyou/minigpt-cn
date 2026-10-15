@@ -1,0 +1,25 @@
+{
+  "format_version": 1,
+  "purpose": "independent_final_12208_checkpoint_evaluation_only",
+  "device": "cuda",
+  "precision": "bfloat16",
+  "seed": 42,
+  "max_new_tokens": 128,
+  "use_cache": false,
+  "modes": [
+    {"name": "greedy", "greedy": true, "temperature": 1.0, "top_p": 1.0},
+    {"name": "sampling", "greedy": false, "temperature": 0.8, "top_p": 0.9}
+  ],
+  "prompts": [
+    {"id": "geography", "text": "北京是中国的"},
+    {"id": "history", "text": "中国的历史可以追溯到"},
+    {"id": "astronomy", "text": "太阳系中，地球"},
+    {"id": "technology", "text": "计算机是一种"},
+    {"id": "biology", "text": "植物通过光合作用"},
+    {"id": "traditional_chinese", "text": "臺灣位於"}
+  ],
+  "valid_loss_absolute_tolerance": 0.000001,
+  "generation_scope": "fixed text continuation samples, not instruction-following or factual-accuracy scores",
+  "test_use": "report this checkpoint only; do not tune prompts/hyperparameters, pick a new checkpoint or extend training using test",
+  "model_training": false
+}

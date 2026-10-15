@@ -1,0 +1,25 @@
+{
+  "format_version": 1,
+  "purpose": "pinned_second_shard_and_bounded_corpus_batch2",
+  "limits": {
+    "max_documents": 250000,
+    "max_raw_body_bytes": 1073741824,
+    "max_selected_body_bytes": 268435456,
+    "min_chars": 300,
+    "max_chars": 50000,
+    "max_selection_seconds": 600,
+    "review_articles": 24
+  },
+  "prior_first_shard_completed_rows": 227147,
+  "retain_train_documents_after_exact_holds": 17134,
+  "protected_valid_documents": 193,
+  "protected_test_documents": 176,
+  "stage_target_train_token_positions": 50000000,
+  "split_seed": 42,
+  "ready_for_training": false,
+  "model_training": false,
+  "command_limit_minutes": 15,
+  "total_budget_yuan": 50,
+  "do_not_repeat_billing_questions": true,
+  "scope": "only remaining fixed first-shard rows and one pinned second shard; existing frozen filtering, exact holds, heldout isolation, 16K encoding"
+}

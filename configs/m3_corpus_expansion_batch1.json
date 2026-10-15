@@ -1,0 +1,30 @@
+{
+  "format_version": 1,
+  "purpose": "bounded_corpus_expansion_and_actual_token_scale",
+  "source_filename": "train-00000-of-00006.parquet",
+  "source_rows": 230792,
+  "source_row_groups": 231,
+  "previously_processed_rows": 80000,
+  "limits": {
+    "max_documents": 150000,
+    "max_raw_body_bytes": 536870912,
+    "max_selected_body_bytes": 134217728,
+    "min_chars": 300,
+    "max_chars": 50000,
+    "max_selection_seconds": 600,
+    "review_articles": 24
+  },
+  "retain_existing_train_documents": 6384,
+  "isolate_old_valid_documents": 68,
+  "isolate_old_test_documents": 77,
+  "stage_target_train_token_positions": 50000000,
+  "group_order_rule_unchanged": true,
+  "split_seed": 42,
+  "tokenizer_vocabulary": 16000,
+  "ready_for_training": false,
+  "model_training": false,
+  "command_limit_minutes": 15,
+  "total_budget_yuan": 50,
+  "do_not_repeat_billing_questions": true,
+  "processing_scope": "one fixed shard continuation, existing frozen rules, exact duplicate and heldout isolation; not a whole-site scan or quality-rule expansion"
+}
