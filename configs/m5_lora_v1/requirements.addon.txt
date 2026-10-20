@@ -1,0 +1,3 @@
+# Only the additional PEFT wheel; existing environment is verified separately.
+# Metadata: https://pypi.org/pypi/peft/0.17.1/json
+peft==0.17.1 --hash=sha256:3d129d64def3d74779c32a080d2567e5f7b674e77d546e3585138216d903f99e

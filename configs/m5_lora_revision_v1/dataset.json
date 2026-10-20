@@ -1,0 +1,218 @@
+{
+  "version": "m5-lora-revision-dataset-v1",
+  "status": "candidate_materialized_pending_independent_acceptance",
+  "definition": "configs/m5_lora_revision_v1/protocol.json",
+  "definition_sha256": "00367debad3ee07862d6f3d7d4f13eee1f056a1cf66f45e83071fd37bfb4386d",
+  "data_directory": "data/processed/m5_lora_revision_candidate_v1",
+  "artifacts": {
+    "configs/m5_lora_revision_v1/protocol.json": "00367debad3ee07862d6f3d7d4f13eee1f056a1cf66f45e83071fd37bfb4386d",
+    "logs/m5_lora_revision_definition_20261019_v1/freeze_receipt.json": "971c680e7d6be904789fa584cb1eeb1041b753128142b83a58b4e635a5e0e76e",
+    "data/processed/m5_lora_revision_candidate_v1/augmented.train.candidate.jsonl": "0b96d979de5cbe567c7b11d445b282199621595e488793c43c506d5149d1d322",
+    "data/processed/m5_lora_revision_candidate_v1/block_reviews.jsonl": "fb6ff85cdd99b8dcf32cadfc6d6da51ed2c5b1565af0c5f8d023b856ad7ee265",
+    "data/processed/m5_lora_revision_candidate_v1/boundary.valid.candidate.jsonl": "fafda50f8f354885156d247976e8e2c04b5fb153f6b5bd24be922aefa19a34e2",
+    "data/processed/m5_lora_revision_candidate_v1/coverage.json": "d8f4b335962df9ce006a4d575e577443e71ca678b3dbd46c395e2751af98e3b6",
+    "data/processed/m5_lora_revision_candidate_v1/dedup_candidates.json": "8be299b51bfadc91ea4b8f50cf06e29df427b152bc43a93fc74de00298e33e3d",
+    "data/processed/m5_lora_revision_candidate_v1/dedup_review.json": "dae803832fda14e420149cadd6399187a3e1b5ab8b81ac6198bff2620fd1ad0e",
+    "data/processed/m5_lora_revision_candidate_v1/family_review.json": "7d524fc65937796511aec640868168639ec525ab4954c7deb04fd4d79f64321b",
+    "data/processed/m5_lora_revision_candidate_v1/manifest.json": "c9bdf202c07a968e6ea108ba046e04964977be30672aea8b0163864e05fbd1d0",
+    "data/processed/m5_lora_revision_candidate_v1/new.train.candidate.jsonl": "827fe39052154446a6bd421c6d1933980808872262093feff93c465947e10033",
+    "data/processed/m5_lora_revision_candidate_v1/pairs.jsonl": "e32eb6100882642751f2a666b0f94df62e1be18985c9a5269f7a9c6f2944937c",
+    "data/processed/m5_lora_revision_candidate_v1/README.md": "c6b7ffa84e8f606535d25089e36549dc67d13c2731bdaceb6aa45de465cfb45b",
+    "data/processed/m5_lora_revision_candidate_v1/review.md": "badc9acb89ba2be6d6c9c5344cef68985c1305f8cc8d54fdf41654fa6063ada3",
+    "data/processed/m5_lora_revision_candidate_v1/short_comparisons.jsonl": "f2072060de2f30d691cea9f33d22cdea7a3083ef6d263f14369ee828fe11e532",
+    "data/processed/m5_lora_revision_candidate_v1/short_comparisons.review.jsonl": "6e07469e8d27178ee5d236fdc90fff33ec137d3fcf97ff851cdddfd7ff616294",
+    "data/processed/m5_lora_revision_candidate_v1/source_families.json": "90642c327b5d7f78d330525d1f23632566ddae73d2ede870d15a6265d585439b",
+    "data/processed/m5_lora_revision_candidate_v1/token_checks.json": "a9e6a11fa5075a95a2b83d23898580ee877b148bef0172ac9b28a838c95863aa",
+    "data/processed/m5_lora_revision_candidate_v1/training_schedule.json": "d4b789b2d0eb19f0fd7d38e860b7b4dd777703d9aead6d9a841c157d6d6b86ef",
+    "logs/m5_lora_revision_data_20261019_v1/author_pairs.py": "40514bba182b6d81077823275612b39512b02a3255f8ce06ac5b90a527940fc4",
+    "logs/m5_lora_revision_data_20261019_v1/build_candidate.py": "9fa81d1ad91e3bd6ab1fd2bd2d413c22f4ead018bbd92d72d4b45434b0db063d",
+    "logs/m5_lora_revision_data_20261019_v1/check_duplicates.py": "39c2bc80ec8058a44e60746544d69a72d7331722ff3b21f8c753cb9f9ff17dc4",
+    "logs/m5_lora_revision_data_20261019_v1/check_tokens.py": "64f58e784a5d0b2ee93fff96ce83f9f899168d64d239a3c291cb027964f33178",
+    "logs/m5_lora_revision_data_20261019_v1/seal_candidate.py": "a642c88569b76ef9af79f1ab6cb80f1c0f5d1bd1482e1a46c0121ac9ad9e0fc0"
+  },
+  "records": {
+    "train": "data/processed/m5_lora_revision_candidate_v1/augmented.train.candidate.jsonl",
+    "new_train": "data/processed/m5_lora_revision_candidate_v1/new.train.candidate.jsonl",
+    "new_diagnostic": "data/processed/m5_lora_revision_candidate_v1/boundary.valid.candidate.jsonl",
+    "original_valid": "data/processed/m5_eval_candidate_v3/valid.candidate.jsonl"
+  },
+  "counts": {
+    "train": 84,
+    "new_train": 48,
+    "new_diagnostic": 24,
+    "original_valid": 15
+  },
+  "coverage": {
+    "original_train": {
+      "samples": 36,
+      "blocks": 95,
+      "families": 2,
+      "kinds": {
+        "heading": 10,
+        "body": 33,
+        "definition": 9,
+        "uncertain": 7,
+        "example": 9,
+        "other": 10,
+        "theorem": 9,
+        "proof": 8
+      },
+      "uncertain_reasons": {
+        "mixed_roles": 5,
+        "insufficient_context": 1,
+        "ambiguous": 1
+      },
+      "nonnull_titles": 37,
+      "null_titles": 58,
+      "block_count_distribution": {
+        "3": 12,
+        "2": 10,
+        "4": 2,
+        "1": 8,
+        "6": 1,
+        "5": 2,
+        "7": 1
+      }
+    },
+    "new_train": {
+      "samples": 48,
+      "blocks": 88,
+      "families": 24,
+      "kinds": {
+        "proof": 12,
+        "definition": 16,
+        "theorem": 11,
+        "example": 10,
+        "body": 17,
+        "other": 8,
+        "uncertain": 5,
+        "heading": 9
+      },
+      "uncertain_reasons": {
+        "ambiguous": 2,
+        "mixed_roles": 2,
+        "insufficient_context": 1
+      },
+      "nonnull_titles": 13,
+      "null_titles": 75,
+      "block_count_distribution": {
+        "1": 40,
+        "4": 1,
+        "5": 2,
+        "6": 2,
+        "7": 2,
+        "8": 1
+      }
+    },
+    "augmented_train": {
+      "samples": 84,
+      "blocks": 183,
+      "families": 26,
+      "kinds": {
+        "heading": 19,
+        "body": 50,
+        "definition": 25,
+        "uncertain": 12,
+        "example": 19,
+        "other": 18,
+        "theorem": 20,
+        "proof": 20
+      },
+      "uncertain_reasons": {
+        "mixed_roles": 7,
+        "insufficient_context": 2,
+        "ambiguous": 3
+      },
+      "nonnull_titles": 50,
+      "null_titles": 133,
+      "block_count_distribution": {
+        "3": 12,
+        "2": 10,
+        "4": 3,
+        "1": 48,
+        "6": 3,
+        "5": 4,
+        "7": 3,
+        "8": 1
+      }
+    },
+    "new_diagnostic": {
+      "samples": 24,
+      "blocks": 50,
+      "families": 12,
+      "kinds": {
+        "proof": 8,
+        "definition": 7,
+        "example": 6,
+        "theorem": 5,
+        "body": 13,
+        "other": 4,
+        "uncertain": 3,
+        "heading": 4
+      },
+      "uncertain_reasons": {
+        "ambiguous": 1,
+        "mixed_roles": 1,
+        "insufficient_context": 1
+      },
+      "nonnull_titles": 6,
+      "null_titles": 44,
+      "block_count_distribution": {
+        "1": 18,
+        "3": 2,
+        "5": 1,
+        "6": 1,
+        "7": 1,
+        "8": 1
+      }
+    }
+  },
+  "token_summaries": {
+    "augmented_train": {
+      "records": 84,
+      "sha256": "0b96d979de5cbe567c7b11d445b282199621595e488793c43c506d5149d1d322",
+      "input_token_range": [
+        1259,
+        1908
+      ],
+      "target_token_range": [
+        26,
+        180
+      ],
+      "sequence_token_range": [
+        1289,
+        1961
+      ],
+      "supervised_tokens_once": 4602
+    },
+    "new_diagnostic": {
+      "records": 24,
+      "sha256": "fafda50f8f354885156d247976e8e2c04b5fb153f6b5bd24be922aefa19a34e2",
+      "input_token_range": [
+        1266,
+        1504
+      ],
+      "target_token_range": [
+        26,
+        181
+      ],
+      "sequence_token_range": [
+        1292,
+        1685
+      ],
+      "supervised_tokens_once": 1207
+    }
+  },
+  "training_schedule": "data/processed/m5_lora_revision_candidate_v1/training_schedule.json",
+  "expected_optimizer_steps": 45,
+  "expected_training_microbatches": 180,
+  "expected_supervised_token_exposures": 9657,
+  "prior_control_supervised_token_exposures": 12230,
+  "human_gold": false,
+  "training_ready": false,
+  "execution_authorized": false,
+  "current_turn_model_generation_calls": 0,
+  "current_turn_training_steps": 0,
+  "test_text_or_annotations_read": false,
+  "next_artifact": "implement_and_verify_revision_runner_without_training_or_generation"
+}

@@ -5,3 +5,13 @@
 *.yaml text eol=lf
 *.yml text eol=lf
 *.md text eol=lf
+*.json text eol=lf
+*.jsonl text eol=lf
+*.txt text eol=lf
+*.sh text eol=lf
+.gitattributes text eol=lf
+
+# 三份历史M5配置已按原始CRLF字节绑定SHA，保留字节，避免破坏旧回执。
+configs/m5_lora_revision_v1/dataset.json -text !eol whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+configs/m5_lora_revision_v1/runtime.json -text !eol whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+configs/m5_train_fit_v1/protocol.json -text !eol whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

@@ -1,0 +1,477 @@
+{
+  "version": "m5-lora-revision-examples-v1",
+  "usage": "spec_demo_only_excluded_from_all_training_and_evaluation",
+  "pairs": [
+    {
+      "pair_id": "m5-rev1-spec-p1",
+      "phenomenon": "P1",
+      "name": "标题边界",
+      "relation": "title_only",
+      "changed_target_fields": [
+        "title"
+      ],
+      "members": [
+        {
+          "schema_version": "m5-structure-v1.2",
+          "sample_id": "m5-rev1-spec-p1-a",
+          "source": {
+            "source_id": "m5-rev1-spec-p1",
+            "group_id": "m5-rev1-spec-p1",
+            "synthetic": true
+          },
+          "split": "spec_demo",
+          "input": {
+            "blocks": [
+              {
+                "block_id": "b0001",
+                "text": "**Proof**: Let n be even. Then n=2k for some integer k."
+              }
+            ]
+          },
+          "target": {
+            "annotations": [
+              {
+                "block_id": "b0001",
+                "kind": "proof",
+                "title": "Proof",
+                "reason": null
+              }
+            ]
+          }
+        },
+        {
+          "schema_version": "m5-structure-v1.2",
+          "sample_id": "m5-rev1-spec-p1-b",
+          "source": {
+            "source_id": "m5-rev1-spec-p1",
+            "group_id": "m5-rev1-spec-p1",
+            "synthetic": true
+          },
+          "split": "spec_demo",
+          "input": {
+            "blocks": [
+              {
+                "block_id": "b0001",
+                "text": "**Proof** Let n be even. Then n=2k for some integer k."
+              }
+            ]
+          },
+          "target": {
+            "annotations": [
+              {
+                "block_id": "b0001",
+                "kind": "proof",
+                "title": null,
+                "reason": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "pair_id": "m5-rev1-spec-p2",
+      "phenomenon": "P2",
+      "name": "英文角色形式",
+      "relation": "invariant_labels",
+      "changed_target_fields": [],
+      "members": [
+        {
+          "schema_version": "m5-structure-v1.2",
+          "sample_id": "m5-rev1-spec-p2-a",
+          "source": {
+            "source_id": "m5-rev1-spec-p2",
+            "group_id": "m5-rev1-spec-p2",
+            "synthetic": true
+          },
+          "split": "spec_demo",
+          "input": {
+            "blocks": [
+              {
+                "block_id": "b0001",
+                "text": "Example: The constant map f(x)=7 is continuous."
+              }
+            ]
+          },
+          "target": {
+            "annotations": [
+              {
+                "block_id": "b0001",
+                "kind": "example",
+                "title": null,
+                "reason": null
+              }
+            ]
+          }
+        },
+        {
+          "schema_version": "m5-structure-v1.2",
+          "sample_id": "m5-rev1-spec-p2-b",
+          "source": {
+            "source_id": "m5-rev1-spec-p2",
+            "group_id": "m5-rev1-spec-p2",
+            "synthetic": true
+          },
+          "split": "spec_demo",
+          "input": {
+            "blocks": [
+              {
+                "block_id": "b0001",
+                "text": "Examples: The constant map f(x)=7 is continuous."
+              }
+            ]
+          },
+          "target": {
+            "annotations": [
+              {
+                "block_id": "b0001",
+                "kind": "example",
+                "title": null,
+                "reason": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "pair_id": "m5-rev1-spec-p3",
+      "phenomenon": "P3",
+      "name": "活动角色与引用",
+      "relation": "kind_changes",
+      "changed_target_fields": [
+        "kind"
+      ],
+      "members": [
+        {
+          "schema_version": "m5-structure-v1.2",
+          "sample_id": "m5-rev1-spec-p3-a",
+          "source": {
+            "source_id": "m5-rev1-spec-p3",
+            "group_id": "m5-rev1-spec-p3",
+            "synthetic": true
+          },
+          "split": "spec_demo",
+          "input": {
+            "blocks": [
+              {
+                "block_id": "b0001",
+                "text": "Definition: A glowing integer is an integer divisible by 11."
+              }
+            ]
+          },
+          "target": {
+            "annotations": [
+              {
+                "block_id": "b0001",
+                "kind": "definition",
+                "title": null,
+                "reason": null
+              }
+            ]
+          }
+        },
+        {
+          "schema_version": "m5-structure-v1.2",
+          "sample_id": "m5-rev1-spec-p3-b",
+          "source": {
+            "source_id": "m5-rev1-spec-p3",
+            "group_id": "m5-rev1-spec-p3",
+            "synthetic": true
+          },
+          "split": "spec_demo",
+          "input": {
+            "blocks": [
+              {
+                "block_id": "b0001",
+                "text": "> Definition: A glowing integer is an integer divisible by 11."
+              }
+            ]
+          },
+          "target": {
+            "annotations": [
+              {
+                "block_id": "b0001",
+                "kind": "body",
+                "title": null,
+                "reason": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "pair_id": "m5-rev1-spec-p4",
+      "phenomenon": "P4",
+      "name": "证明请求与正文",
+      "relation": "kind_and_reason_change",
+      "changed_target_fields": [
+        "kind",
+        "reason"
+      ],
+      "members": [
+        {
+          "schema_version": "m5-structure-v1.2",
+          "sample_id": "m5-rev1-spec-p4-a",
+          "source": {
+            "source_id": "m5-rev1-spec-p4",
+            "group_id": "m5-rev1-spec-p4",
+            "synthetic": true
+          },
+          "split": "spec_demo",
+          "input": {
+            "blocks": [
+              {
+                "block_id": "b0001",
+                "text": "证明：若整数a能被4整除，则a为偶数。"
+              }
+            ]
+          },
+          "target": {
+            "annotations": [
+              {
+                "block_id": "b0001",
+                "kind": "other",
+                "title": null,
+                "reason": "out_of_scope"
+              }
+            ]
+          }
+        },
+        {
+          "schema_version": "m5-structure-v1.2",
+          "sample_id": "m5-rev1-spec-p4-b",
+          "source": {
+            "source_id": "m5-rev1-spec-p4",
+            "group_id": "m5-rev1-spec-p4",
+            "synthetic": true
+          },
+          "split": "spec_demo",
+          "input": {
+            "blocks": [
+              {
+                "block_id": "b0001",
+                "text": "证明：设a=4k，则a=2(2k)，因此a为偶数。"
+              }
+            ]
+          },
+          "target": {
+            "annotations": [
+              {
+                "block_id": "b0001",
+                "kind": "proof",
+                "title": null,
+                "reason": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "pair_id": "m5-rev1-spec-p5",
+      "phenomenon": "P5",
+      "name": "不确定原因",
+      "relation": "reason_changes",
+      "changed_target_fields": [
+        "reason"
+      ],
+      "members": [
+        {
+          "schema_version": "m5-structure-v1.2",
+          "sample_id": "m5-rev1-spec-p5-a",
+          "source": {
+            "source_id": "m5-rev1-spec-p5",
+            "group_id": "m5-rev1-spec-p5",
+            "synthetic": true
+          },
+          "split": "spec_demo",
+          "input": {
+            "blocks": [
+              {
+                "block_id": "b0001",
+                "text": "Definition/Theorem: A balanced integer has the form $6k$."
+              }
+            ]
+          },
+          "target": {
+            "annotations": [
+              {
+                "block_id": "b0001",
+                "kind": "uncertain",
+                "title": null,
+                "reason": "ambiguous"
+              }
+            ]
+          }
+        },
+        {
+          "schema_version": "m5-structure-v1.2",
+          "sample_id": "m5-rev1-spec-p5-b",
+          "source": {
+            "source_id": "m5-rev1-spec-p5",
+            "group_id": "m5-rev1-spec-p5",
+            "synthetic": true
+          },
+          "split": "spec_demo",
+          "input": {
+            "blocks": [
+              {
+                "block_id": "b0001",
+                "text": "- Definition: A balanced integer has the form $6k$.\n  Theorem: Every balanced integer is even."
+              }
+            ]
+          },
+          "target": {
+            "annotations": [
+              {
+                "block_id": "b0001",
+                "kind": "uncertain",
+                "title": null,
+                "reason": "mixed_roles"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "pair_id": "m5-rev1-spec-p6",
+      "phenomenon": "P6",
+      "name": "末尾块覆盖",
+      "relation": "append_one_block",
+      "changed_target_fields": [
+        "annotations_length"
+      ],
+      "members": [
+        {
+          "schema_version": "m5-structure-v1.2",
+          "sample_id": "m5-rev1-spec-p6-a",
+          "source": {
+            "source_id": "m5-rev1-spec-p6",
+            "group_id": "m5-rev1-spec-p6",
+            "synthetic": true
+          },
+          "split": "spec_demo",
+          "input": {
+            "blocks": [
+              {
+                "block_id": "b0001",
+                "text": "### 整数的小例子"
+              },
+              {
+                "block_id": "b0002",
+                "text": "Theorem: If an integer is divisible by 10, it is even."
+              },
+              {
+                "block_id": "b0003",
+                "text": "$$\n10k=2(5k).\n$$"
+              },
+              {
+                "block_id": "b0004",
+                "text": "Proof: Let n=10k. Since n=2(5k), n is even."
+              }
+            ]
+          },
+          "target": {
+            "annotations": [
+              {
+                "block_id": "b0001",
+                "kind": "heading",
+                "title": "整数的小例子",
+                "reason": null
+              },
+              {
+                "block_id": "b0002",
+                "kind": "theorem",
+                "title": null,
+                "reason": null
+              },
+              {
+                "block_id": "b0003",
+                "kind": "body",
+                "title": null,
+                "reason": null
+              },
+              {
+                "block_id": "b0004",
+                "kind": "proof",
+                "title": null,
+                "reason": null
+              }
+            ]
+          }
+        },
+        {
+          "schema_version": "m5-structure-v1.2",
+          "sample_id": "m5-rev1-spec-p6-b",
+          "source": {
+            "source_id": "m5-rev1-spec-p6",
+            "group_id": "m5-rev1-spec-p6",
+            "synthetic": true
+          },
+          "split": "spec_demo",
+          "input": {
+            "blocks": [
+              {
+                "block_id": "b0001",
+                "text": "### 整数的小例子"
+              },
+              {
+                "block_id": "b0002",
+                "text": "Theorem: If an integer is divisible by 10, it is even."
+              },
+              {
+                "block_id": "b0003",
+                "text": "$$\n10k=2(5k).\n$$"
+              },
+              {
+                "block_id": "b0004",
+                "text": "Proof: Let n=10k. Since n=2(5k), n is even."
+              },
+              {
+                "block_id": "b0005",
+                "text": "这里保留上述结论，不引入新的结构角色。"
+              }
+            ]
+          },
+          "target": {
+            "annotations": [
+              {
+                "block_id": "b0001",
+                "kind": "heading",
+                "title": "整数的小例子",
+                "reason": null
+              },
+              {
+                "block_id": "b0002",
+                "kind": "theorem",
+                "title": null,
+                "reason": null
+              },
+              {
+                "block_id": "b0003",
+                "kind": "body",
+                "title": null,
+                "reason": null
+              },
+              {
+                "block_id": "b0004",
+                "kind": "proof",
+                "title": null,
+                "reason": null
+              },
+              {
+                "block_id": "b0005",
+                "kind": "body",
+                "title": null,
+                "reason": null
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

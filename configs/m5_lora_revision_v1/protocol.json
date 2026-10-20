@@ -1,0 +1,342 @@
+{
+  "version": "m5-lora-data-revision-definition-v1",
+  "date": "2026-10-19",
+  "status": "definition_only_materials_and_runner_pending",
+  "execution_authorized": false,
+  "current_turn_limits": {
+    "training_steps": 0,
+    "model_generation_calls": 0,
+    "model_loads": 0
+  },
+  "parent_training_plan": "configs/m5_lora_v1/protocol.json",
+  "parent_greedy_plan": "configs/m5_greedy_diagnostic_v2/protocol.json",
+  "previous_evidence_freeze": "logs/m5_greedy_results_20261019_v2/freeze_receipt.json",
+  "artifacts": {
+    "configs/m5_lora_v1/protocol.json": "f49183f5cf18f77e464a37183d76b9b4a6860db5dbd2d98305db0f587d1266e0",
+    "configs/m5_greedy_diagnostic_v2/protocol.json": "0e22b6593cc4597c1938ac8cbbc6f124c843fd28b5578ca696a307c7f1acf150",
+    "logs/m5_greedy_results_20261019_v2/freeze_receipt.json": "a82f2805fd3753563403e9d404f5091aa7b8e2627d97cdc2e62bac496002985d",
+    "configs/m5_lora_v1/runtime.json": "e87b1e10dca896c7d5c9bd60eb019c04314e98e266993b422ef4f718fe7a74e4",
+    "configs/m5_greedy_diagnostic_v2/runtime.json": "be4db8e3f0fb3648bd6decf4cebafde198d50b8d6e466a9b370b6c5d121286eb",
+    "configs/m5_sample_v1_2.schema.json": "68db9cef718f36fa052913ea6e9a5fdfa846e63cea86634da1b48979af21b3b2",
+    "docs/m5-task-spec.md": "ddf0862b4dce6614f731804f443445c6c3b64674eba27386d89b56ac075d0ea0",
+    "docs/m5-task-spec-v1.1.md": "73eacce6d828e2f3288bb504b4a826f07b2cd227c6a406b5a1127dd0b6c3a015",
+    "docs/m5-task-spec-v1.2.md": "b2ba11332def54730e27423ce1cf484ca2c8eb5f6bcd57c0fa08b9fc6f9d1430",
+    "docs/m5-lora-revision-plan.md": "9c817ebc9fcddabee6c239651785f522ce8abc1ece41a3a58616dc4430120e8b",
+    "docs/examples/m5_lora_revision_pairs_v1.json": "bf5478184be934ac75d52e3845f6c40f682ebb71bc6b9e473da6a96482826142",
+    "logs/m5_lora_revision_definition_20261019_v1/family_slots.json": "a28ecdbad6ea300556c23dcf289318904312d38f9f03288fe1be0daa3fc0df47",
+    "logs/m5_lora_revision_definition_20261019_v1/planned_sample_order.json": "b2b3f9f18587f45f4a32f36670f1d2e925b47546609030842124eefe6d567d17",
+    "src/minigpt_cn/m5_structure.py": "6ec65166c3472edb71f7ab4d8a7c1b179132a9162caac0729fb0a191a34c923c",
+    "src/minigpt_cn/m5_lora_run.py": "975c50f0fc1c0e7db58f5b46a65a475016d80e8c9bd2707cb5aa4ff1b174c31d",
+    "src/minigpt_cn/m5_greedy_run_v2.py": "18dce87ab0d3645718d2f4ea2b9e53db4f0b435681fa5150fd2deca566ec96df",
+    "configs/m5_structure_prompt_v1_2.txt": "1a0cea51066e15a22af3ac6eefd1aa4fb14cab0178e0efab4cb40dc752d5567b",
+    "logs/m5_greedy_results_20261019_v2/acceptance.json": "a87996df57f0f19da3d843f8d8aa577487bead22d3a07c56b97ff1e26b97351b"
+  },
+  "rule_version": "m5-structure-v1.2",
+  "model": {
+    "model_repo": "Qwen/Qwen3-0.6B",
+    "model_revision": "c1899de289a04d12100db370d81485cdf75e47ca",
+    "model_directory": "data/raw/m5_models/qwen3_0_6b_c1899de",
+    "chat_template_sha256": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8"
+  },
+  "system_prompt": "configs/m5_structure_prompt_v1_2.txt",
+  "training_interface": {
+    "user_content": "compact_json(input)",
+    "assistant_content": "compact_json(target)",
+    "serialization": "json.dumps(value,ensure_ascii=False,separators=(',',':'))",
+    "prefix": "apply_chat_template(system_user,add_generation_prompt=True,enable_thinking=False)",
+    "full_sequence": "prefix + compact_json(target) + '<|im_end|>'",
+    "tokenization": "whole_string; add_special_tokens=False; verify prefix token equality",
+    "ignore_index": -100,
+    "loss_scope": "target_json_and_one_final_eos",
+    "eos_token_id": 151645,
+    "pad_token_id": 151643,
+    "padding_side": "right",
+    "max_input_tokens": 4096,
+    "max_target_tokens_including_eos": 1024,
+    "max_sequence_tokens": 5120,
+    "truncation": false,
+    "packing": false,
+    "labels_shift": "causal_lm_internal_once",
+    "metadata_in_model_input": false
+  },
+  "expected_packages": {
+    "psutil": "7.2.2",
+    "nvidia-cudnn-cu12": "9.10.2.21",
+    "networkx": "3.6.1",
+    "typing_extensions": "4.16.0",
+    "certifi": "2026.7.22",
+    "PyYAML": "6.0.3",
+    "nvidia-cuda-runtime-cu12": "12.6.77",
+    "nvidia-cusolver-cu12": "11.7.1.2",
+    "nvidia-nvtx-cu12": "12.6.77",
+    "filelock": "3.32.3",
+    "nvidia-curand-cu12": "10.3.7.77",
+    "nvidia-cuda-cupti-cu12": "12.6.80",
+    "nvidia-nvjitlink-cu12": "12.6.85",
+    "charset-normalizer": "3.5.2",
+    "idna": "3.20",
+    "huggingface_hub": "0.36.2",
+    "accelerate": "1.10.1",
+    "Jinja2": "3.1.6",
+    "nvidia-cublas-cu12": "12.6.4.1",
+    "nvidia-cusparse-cu12": "12.5.4.2",
+    "setuptools": "78.1.0",
+    "numpy": "2.5.4",
+    "mpmath": "1.3.0",
+    "tokenizers": "0.22.2",
+    "urllib3": "2.8.0",
+    "fsspec": "2026.7.0",
+    "nvidia-cusparselt-cu12": "0.7.1",
+    "nvidia-cuda-nvrtc-cu12": "12.6.77",
+    "triton": "3.4.0",
+    "safetensors": "0.8.0",
+    "nvidia-nccl-cu12": "2.27.3",
+    "requests": "2.34.2",
+    "hf-xet": "1.7.0",
+    "tqdm": "4.70.1",
+    "MarkupSafe": "3.0.3",
+    "nvidia-cufft-cu12": "11.3.0.4",
+    "sympy": "1.14.0",
+    "torch": "2.8.0+cu126",
+    "transformers": "4.57.6",
+    "packaging": "26.3",
+    "nvidia-cufile-cu12": "1.11.1.6",
+    "regex": "2026.9.29",
+    "peft": "0.17.1"
+  },
+  "dataset": {
+    "original_train": "data/processed/m5_eval_candidate_v3/train.candidate.jsonl",
+    "original_train_samples": 36,
+    "original_valid": "data/processed/m5_eval_candidate_v3/valid.candidate.jsonl",
+    "original_valid_samples": 15,
+    "new_train_pairs": 24,
+    "new_train_samples": 48,
+    "merged_train_samples": 84,
+    "new_diagnostic_pairs": 12,
+    "new_diagnostic_samples": 24,
+    "materialized": false,
+    "token_counts_verified": false,
+    "human_gold": false,
+    "new_source": "assistant_original_synthetic_without_model_generation",
+    "family_slots": "logs/m5_lora_revision_definition_20261019_v1/family_slots.json",
+    "allocation_per_phenomenon": {
+      "P1": {
+        "train_pairs": 4,
+        "diagnostic_pairs": 2
+      },
+      "P2": {
+        "train_pairs": 4,
+        "diagnostic_pairs": 2
+      },
+      "P3": {
+        "train_pairs": 4,
+        "diagnostic_pairs": 2
+      },
+      "P4": {
+        "train_pairs": 4,
+        "diagnostic_pairs": 2
+      },
+      "P5": {
+        "train_pairs": 4,
+        "diagnostic_pairs": 2
+      },
+      "P6": {
+        "train_pairs": 4,
+        "diagnostic_pairs": 2
+      }
+    },
+    "proposed_directory": "data/processed/m5_lora_revision_candidate_v1",
+    "spec_examples": "docs/examples/m5_lora_revision_pairs_v1.json",
+    "spec_examples_eligible_for_training_or_evaluation": false,
+    "test_annotations_or_text_read_allowed": false,
+    "pair_family_split_required": true,
+    "new_diagnostic_record_split": "valid",
+    "minimum_kind_support_each_side": {
+      "body": 1,
+      "heading": 1,
+      "definition": 1,
+      "theorem": 1,
+      "proof": 1,
+      "example": 1,
+      "other": 1,
+      "uncertain": 1
+    },
+    "require_each_uncertain_reason_on_both_sides": true,
+    "dedup": {
+      "exact_and_whitespace": true,
+      "character_ngram": 32,
+      "shorter_set_overlap_threshold": 0.8,
+      "short_text_manual_review": true,
+      "test_scope": "existing_hashes_only_no_content_parsing"
+    }
+  },
+  "phenomena": [
+    {
+      "id": "P1",
+      "name": "标题边界",
+      "train_pairs": 4,
+      "diagnostic_pairs": 2
+    },
+    {
+      "id": "P2",
+      "name": "英文角色形式",
+      "train_pairs": 4,
+      "diagnostic_pairs": 2
+    },
+    {
+      "id": "P3",
+      "name": "活动角色与引用",
+      "train_pairs": 4,
+      "diagnostic_pairs": 2
+    },
+    {
+      "id": "P4",
+      "name": "证明请求与正文",
+      "train_pairs": 4,
+      "diagnostic_pairs": 2
+    },
+    {
+      "id": "P5",
+      "name": "不确定原因",
+      "train_pairs": 4,
+      "diagnostic_pairs": 2
+    },
+    {
+      "id": "P6",
+      "name": "末尾块覆盖",
+      "train_pairs": 4,
+      "diagnostic_pairs": 2
+    }
+  ],
+  "training_comparison": {
+    "control": {
+      "checkpoint_step": 45,
+      "files": {
+        "README.md": "170e69c847ab8854cb6d24a906135876507725fd1b474d6d3a98321c733397fb",
+        "adapter_config.json": "54ec71c17901424dfab28f5e07c754e97381649216d14be9eb1abcdeb51f4bab",
+        "adapter_model.safetensors": "3f8762e9389935bca779f52a0b02fab624ab18782c30a183bf49b5bd34d2d841",
+        "training_state.pt": "79d01f1a4d6bc655e6fed1ada1c031026393eb3e03e20575e4d0931f58354e8c"
+      },
+      "directory": "logs/m5_lora_experiment_20261018_v1/train-valid/checkpoints/step_000045",
+      "retrain": false
+    },
+    "candidate": {
+      "fresh_adapter": true,
+      "expected_initial_sha256": "7716c1bddde7d596bf59dc7c8fb87d15f1553042c0e91ed1eb0917ea140aa3e8",
+      "inherit_adapter_optimizer_and_loss_settings": true,
+      "max_optimizer_steps": 45,
+      "training_microbatches": 180,
+      "microbatch_size": 1,
+      "gradient_accumulation_steps": 4,
+      "complete_epochs": 2,
+      "last_epoch_samples": 12,
+      "scheduler": {
+        "function": "transformers.get_linear_schedule_with_warmup",
+        "num_warmup_steps": 10,
+        "num_training_steps": 180,
+        "call_order": "optimizer.step then scheduler.step"
+      },
+      "checkpoint_steps": [
+        45
+      ],
+      "max_wall_train_seconds": 1800,
+      "sample_order": "logs/m5_lora_revision_definition_20261019_v1/planned_sample_order.json",
+      "supervised_token_exposures": null
+    },
+    "gpu_preflight": {
+      "max_forward_backward_pairs": 2,
+      "optimizer_steps": 0,
+      "source": "longest_candidate_train_sequence",
+      "restore_rng_and_initial_adapter": true,
+      "reserved_margin_bytes": 1073741824
+    },
+    "equal_optimizer_steps_not_equal_tokens_or_epochs": true
+  },
+  "proposed_evaluation": {
+    "generation": {
+      "do_sample": false,
+      "temperature": null,
+      "top_p": null,
+      "top_k": null,
+      "min_p": null,
+      "repetition_penalty": 1.0,
+      "num_beams": 1,
+      "num_return_sequences": 1,
+      "max_new_tokens": 1024,
+      "eos_token_id": [
+        151645,
+        151643
+      ],
+      "pad_token_id": 151643,
+      "bos_token_id": 151643,
+      "use_cache": true,
+      "cache_implementation": "dynamic",
+      "disable_compile": true
+    },
+    "generate_overrides": {
+      "do_sample": false,
+      "use_model_defaults": false
+    },
+    "seed_per_sample": 42,
+    "enable_thinking": false,
+    "max_model_generation_calls": 87,
+    "conditions": [
+      {
+        "model": "base",
+        "dataset": "new_boundary_diagnostic",
+        "samples": 24
+      },
+      {
+        "model": "control_step45",
+        "dataset": "new_boundary_diagnostic",
+        "samples": 24
+      },
+      {
+        "model": "candidate_step45",
+        "dataset": "new_boundary_diagnostic",
+        "samples": 24
+      },
+      {
+        "model": "candidate_step45",
+        "dataset": "original_valid",
+        "samples": 15
+      }
+    ],
+    "run_only_after_candidate_training_and_checkpoint_lock": true,
+    "reuse_original_valid_base_and_control": "logs/m5_greedy_diagnostic_20261019_v2",
+    "minimum_gates": {
+      "json_rate": 1.0,
+      "schema_rate": 1.0,
+      "coverage_rate": 1.0,
+      "block_all_fields_rate": 0.8,
+      "sample_exact_rate": 0.5,
+      "macro_f1": 0.75,
+      "macro_f1_gain_over_same_prompt_base": 0.15,
+      "non_null_title_exact_rate": 0.8,
+      "non_null_reason_exact_rate": 0.8
+    },
+    "directional_improvement": {
+      "new_diagnostic_macro_f1": "candidate > control",
+      "new_diagnostic_block_exact_rate": "candidate > control",
+      "original_valid_nonregression": [
+        "json_valid",
+        "schema_valid",
+        "coverage_valid",
+        "block_exact",
+        "sample_exact",
+        "macro_f1",
+        "nonnull_title_correct",
+        "nonnull_reason_correct"
+      ]
+    },
+    "pair_score": "both_members_sample_exact; report_all_six_phenomena",
+    "retry": false,
+    "other_checkpoints_or_seeds": false,
+    "test_calls": 0,
+    "automatic_test_allowed": false,
+    "diagnostic_only": true
+  },
+  "existing_runner_accepts_this_definition": false,
+  "runtime_ready": false,
+  "next_artifact": "materialize_and_accept_48_train_plus_24_diagnostic_candidates"
+}

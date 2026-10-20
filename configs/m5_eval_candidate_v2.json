@@ -1,0 +1,145 @@
+{
+  "version": "m5-eval-candidate-v2",
+  "status": "frozen_candidate_incomplete_coverage",
+  "rule_version": "m5-structure-v1.1",
+  "parent_eval_protocol": "configs/m5_eval_candidate_v1.json",
+  "parent_eval_protocol_sha256": "cafef29521d1c9119328bca52d16308cb4158fff8783955355d05e6abc1cd493",
+  "parent_sft_protocol": "configs/m5_sft_candidate_v1/protocol.json",
+  "system_prompt": "configs/m5_sft_candidate_v1/prompt.txt",
+  "data_directory": "data/processed/m5_eval_candidate_v2",
+  "train_records": "data/processed/m5_sft_candidate_v1/train.jsonl",
+  "valid_records": "data/processed/m5_eval_candidate_v2/valid.candidate.jsonl",
+  "test_records": "data/processed/m5_eval_candidate_v2/test.candidate.jsonl",
+  "new_source_family": "Amann-Escher entire Analysis I/II/III series reserved for valid",
+  "new_samples": 5,
+  "new_blocks": 22,
+  "coverage": {
+    "valid": {
+      "samples": 13,
+      "blocks": 56,
+      "family_count_in_bounded_scope": 3,
+      "kinds": {
+        "body": 35,
+        "heading": 9,
+        "definition": 1,
+        "theorem": 3,
+        "proof": 2,
+        "example": 0,
+        "other": 6,
+        "uncertain": 0
+      },
+      "missing_kinds": [
+        "example",
+        "uncertain"
+      ],
+      "non_null_titles": 16,
+      "non_null_reasons": {
+        "out_of_scope": 6
+      },
+      "coverage_gate_passed": false
+    },
+    "test": {
+      "samples": 8,
+      "blocks": 35,
+      "family_count_in_bounded_scope": 1,
+      "kinds": {
+        "body": 18,
+        "heading": 6,
+        "definition": 3,
+        "theorem": 3,
+        "proof": 2,
+        "example": 2,
+        "other": 1,
+        "uncertain": 0
+      },
+      "missing_kinds": [
+        "uncertain"
+      ],
+      "non_null_titles": 14,
+      "non_null_reasons": {
+        "out_of_scope": 1
+      },
+      "coverage_gate_passed": false
+    }
+  },
+  "evaluation_contract": {
+    "family_split_required": true,
+    "accepted_valid_records": 0,
+    "accepted_test_records": 0,
+    "minimum_each_split": {
+      "confirmed_families": 2,
+      "samples": 8,
+      "blocks": 24,
+      "support_each_kind": 1,
+      "non_null_titles": 1,
+      "multi_block_samples": 1
+    },
+    "json_rate": 1.0,
+    "schema_rate": 1.0,
+    "coverage_rate": 1.0,
+    "block_all_fields_rate": 0.8,
+    "sample_exact_rate": 0.5,
+    "macro_f1": 0.75,
+    "macro_f1_gain_over_same_prompt_base": 0.15,
+    "non_null_title_exact_rate": 0.8,
+    "non_null_reason_exact_rate": 0.8,
+    "generation": {
+      "do_sample": true,
+      "temperature": 0.7,
+      "top_p": 0.8,
+      "top_k": 20,
+      "min_p": 0.0,
+      "repetition_penalty": 1.0,
+      "num_beams": 1,
+      "num_return_sequences": 1,
+      "max_new_tokens": 1024,
+      "eos_token_id": [
+        151645,
+        151643
+      ],
+      "pad_token_id": 151643,
+      "bos_token_id": 151643,
+      "use_cache": true,
+      "cache_implementation": "dynamic",
+      "disable_compile": true
+    },
+    "seed_per_sample": 42,
+    "runtime": {
+      "device": "cuda:0",
+      "dtype": "bfloat16",
+      "attn_implementation": "sdpa",
+      "batch_size": 1,
+      "logits_to_keep": 1,
+      "tf32": false,
+      "cudnn_benchmark": false,
+      "cublas_workspace_config": ":4096:8"
+    },
+    "repair": false,
+    "retry": false,
+    "rule_comparator": "frozen minigpt_cn.m5_structure.predict_rules"
+  },
+  "training_ready": false,
+  "model_generation_authorized_by_this_protocol": false,
+  "labels": "assistant_candidates_not_independent_human_gold",
+  "artifacts": {
+    "configs/m5_eval_candidate_v1.json": "cafef29521d1c9119328bca52d16308cb4158fff8783955355d05e6abc1cd493",
+    "configs/m5_sft_candidate_v1/protocol.json": "4b8b57072b242f7793fa859f4accff0b1339869fd0b4ee3de3ccb0e81ad20f04",
+    "configs/m5_sft_candidate_v1/prompt.txt": "c27e4f7553b81100bbb725e3c70fc382daff402dd69f93a4f295df3b7bb5172b",
+    "configs/m5_sample_v1_1.schema.json": "f5daff524f85252b77b89b584b2bd59a81ed36cbaa167eb6e3b119ebeac03291",
+    "docs/m5-task-spec-v1.1.md": "73eacce6d828e2f3288bb504b4a826f07b2cd227c6a406b5a1127dd0b6c3a015",
+    "docs/m5-amann-excerpt.md": "343bd500475d30c2b31d1e848a98377987621083d7fee304f197ff113604b1bb",
+    "data/raw/m5_amann_excerpt_v1/analysis_i_selected.canonical.md": "9aa96a200772fd58f51f06a024cebb9acf2604ed9770ed52cc4e659ed79c520d",
+    "logs/m5_amann_excerpt_20261018_v1/probe.json": "c8480d8ccbaeb742d9865548d61ed2b82f32c4d74bffe3dc0302e6ecd6fea92d",
+    "logs/m5_amann_excerpt_20261018_v1/family_audit.json": "d35e914b4c88c3f1b9f0e9882e02f2ace0aaf35e1d398bc4ad98ad314e147f94",
+    "logs/m5_amann_excerpt_20261018_v1/preparation.json": "883d3cbf56658b4a048751531de522c2c6ccb87375925844910e8dad144412ab",
+    "data/processed/m5_eval_candidate_v2/amann_annotations.candidate.jsonl": "717729e8edcdfae504c55e49633c896848d24d2468fe438cff4bccbee5ab922d",
+    "data/processed/m5_eval_candidate_v2/amann_family_reservation.json": "38ae2d42497478b481efb40a744f8a7dff8d16abe005bdb54419f0a47416b6d2",
+    "data/processed/m5_eval_candidate_v2/amann_locators.json": "1e7931d74b1aa33c773545f649ad2986f28873a7f8c5a90a46c00dc0ffcaa37a",
+    "data/processed/m5_eval_candidate_v2/amann_reviews.json": "74202262b8f67452f2f0507084641f9855de3d8750fb6573c3a572c298155116",
+    "data/processed/m5_eval_candidate_v2/conversion_manifest.json": "8348f761804aa854bd310784203ccba20480179bad4be2262fa2a5b7fce2e289",
+    "data/processed/m5_eval_candidate_v2/coverage.json": "1b7d9bfc0b79207ba75b7dbd5190245186fdd657c27dd055b9bda65ecbbbcba7",
+    "data/processed/m5_eval_candidate_v2/review.md": "895996e7f83bd698049854dda26763f5d1366c44ec32b42ec646efc55df70944",
+    "data/processed/m5_eval_candidate_v2/test.candidate.jsonl": "49c323d1d48a938b9efa4ff91fe00a49b981725b216639b0d29d36d1f3456163",
+    "data/processed/m5_eval_candidate_v2/valid.candidate.jsonl": "35193186f3792bbc5f151c5040f15c168f5fb99d9bb089c023fb618ced63f639"
+  }
+}

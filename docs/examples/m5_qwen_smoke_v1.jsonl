@@ -1,0 +1,1 @@
+{"review_id":"smoke01","rule_version":"m5-structure-v1.1","input":{"blocks":[{"block_id":"b0001","text":"# 测试标题"},{"block_id":"b0002","text":"这是一段普通正文。"}]},"proposed_target":{"annotations":[{"block_id":"b0001","kind":"heading","title":"测试标题","reason":null},{"block_id":"b0002","kind":"body","title":null,"reason":null}]}}
