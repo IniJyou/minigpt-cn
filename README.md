@@ -110,7 +110,7 @@ $env:CUDA_VISIBLE_DEVICES = '-1'
 .\.venv\Scripts\python.exe -m pytest -q --tb=short
 ```
 
-M3收尾轮完整CPU回归为Windows736 passed/10 skipped、WSL741 passed/5 skipped；M4本轮只做展示构建、结果/文档核对与Ruff，不冒称重跑完整回归。历史原始检查见[M3收尾记录](docs/m3-closeout.md#本轮检查)。
+历史完整CPU回归为Windows736 passed/10 skipped、WSL741 passed/5 skipped，两边Ruff通过。M4交付时另做展示构建、结果/文档核对与Ruff；本次README更新不重跑模型或完整回归。历史原始检查见[M3收尾记录](docs/m3-closeout.md#本轮检查)。
 
 ## 许可与发布边界
 
