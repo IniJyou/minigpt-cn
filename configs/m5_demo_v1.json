@@ -1,0 +1,16 @@
+{
+  "version": "m5-manual-demo-v1",
+  "base_model": "Qwen/Qwen3-0.6B",
+  "adapter_directory": "logs/m5_finish_experiment_20261020_v1/checkpoints/step_000105",
+  "adapter_files": {
+    "README.md": "170e69c847ab8854cb6d24a906135876507725fd1b474d6d3a98321c733397fb",
+    "adapter_config.json": "50184f94148a8393edff3a932135aecac1a093ecd43f57407c7cd8b91731a096",
+    "adapter_model.safetensors": "a1c424a3ef263f25ba8013229bfaeff7a627073ead6effcf31807b0616826a8f",
+    "training_state.pt": "999f9eee574a2387bc738819666b978d5f8c4377bdd37116614132243302b75d"
+  },
+  "quality_status": "质量未通过接纳门槛的实验候选",
+  "formal_candidate_selected": false,
+  "manual_generation_budget_per_invocation": 1,
+  "max_new_tokens": 1024,
+  "no_training_or_automatic_retry": true
+}

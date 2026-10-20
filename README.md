@@ -2,7 +2,7 @@
 
 从零实现并训练约33M参数的中文Decoder-only Transformer，完成BPE、训练恢复、完整评估和本地推理的工程闭环。
 
-**[项目展示](docs/showcase.md) · [模型卡](MODEL_CARD.md) · [本地复现](docs/local-reproduction.md) · [M4验收入口](docs/m4-acceptance.md)**
+**[项目展示](docs/showcase.md) · [模型卡](MODEL_CARD.md) · [本地复现](docs/local-reproduction.md) · [目录与文档导航](docs/README.md)**
 
 这是中文文本续写实验。生成仍会重复、离题和句意混乱；展示真实结果和限制，不宣称可靠聊天、指令遵循或事实准确性。
 
@@ -39,6 +39,25 @@
 **仓库不包含权重、tokenizer产物或数据下载包。** 只有代码的新克隆不能直接生成；缺产物时不自动换词表、训练替代模型或启动云作业。
 M4文档命令的CPU8-token生成已实际执行，PowerShell5.1/7语法通过；它验证命令与文件链路，不代替质量评估。推理不需要原云端绝对路径或训练数据，精确续训仍受原版本/配置/数据契约约束。
 
+在项目根目录打开PowerShell，完成上述产物核对后，可反复输入自己的续写前缀（下例使用CUDA/BF16）：
+
+```powershell
+while ($true) {
+    $m4Prompt = Read-Host '输入续写前缀（/exit退出）'
+    if ($m4Prompt -eq '/exit') { break }
+    if ([string]::IsNullOrWhiteSpace($m4Prompt)) { continue }
+    & .\.venv\Scripts\python.exe -B -m minigpt_cn.inference.generate `
+      --checkpoint 'logs/m3_training_report/m3_pretrain_100m_return_v1/ckpt_final.pt' `
+      --tokenizer 'data/processed/pilot_tokenizer_16k_v1.json' `
+      --prompt $m4Prompt --max-new-tokens 128 `
+      --device cuda --precision bfloat16 --seed 42 `
+      --temperature 0.8 --top-p 0.9 --repetition-penalty 1.0
+    if ($LASTEXITCODE -ne 0) { break }
+}
+```
+
+仅用CPU时，将`--device cuda --precision bfloat16`改为`--device cpu --precision float32`。用户已完成自由提示词试用；这些输出用于观察续写表现，不能单独证明泛化能力或总体生成质量。
+
 ## 项目结构
 
 ```text
@@ -48,27 +67,40 @@ tests/               CPU可运行的实现与恢复等测试
 scripts/             已有记录的离线展示材料构建
 docs/                实验结果、展示、复现与阶段交接
 docs/assets/         本项目派生的PNG/SVG训练曲线
+data/                来源说明与本地数据产物（产物Git忽略）
+checkpoints/         本地训练权重（Git忽略）
+logs/                运行/验收/回传产物，含部分权重（Git忽略）
 ```
 
 数据工具已收尾并冻结扩建，保留代码供按需复用；不再以维基模板、全站扫描或通用审批平台作为主线。旧pilot/2048词表和权重原样保留，不混用新16K token ID。
+
+## M5本地结构标注体验
+
+M5已完成独立Qwen3-0.6B LoRA工程实验，模型质量尚未达标。打开[GitHub交付与本地查看说明](docs/m5-github-closeout.md)，或在现有WSL M5环境运行：
+
+```bash
+bash /mnt/d/aiworkspace/transformer/scripts/m5_demo_wsl.sh --text 'Definition: A metric is a function.' --run
+```
+
+不加`--run`只检查。最后step105的训练、评测、模型位置和限制见[M5收尾报告](docs/m5-closeout.md)。
 
 ## 阶段状态
 
 | 阶段 | 状态 |
 | --- | --- |
 | M0–M2 | 核心实现、16K tokenizer与33M短训练/恢复闭环已验收 |
-| M3 33M Pretraining | 固定训练、评估与优化实验结束；生成限制保留，用户确认已完成远端收尾 |
-| M4 Portfolio Release | 展示页、图、模型卡、复现与验收说明已交付，等待用户整体验收/Git发布 |
-| M5 LoRA Chat and Evaluation | 独立0.6B阶段，M4验收后另行开展 |
+| M3 33M Pretraining | 固定训练、评估与优化实验已收尾；保留原final基线和生成质量限制 |
+| M4 Portfolio Release | 展示页、图、模型卡与本地复现已发布；用户完成自由提示词试用，[PR #6](https://github.com/IniJyou/minigpt-cn/pull/6)已合并 |
+| M5 LoRA Chat and Evaluation | [已收尾](docs/m5-closeout.md)：本地推理、LoRA训练/恢复与53次最终评测完成；模型质量未达接纳门槛，test封存；提供完整对照查看器和手动推理入口 |
 
-**继续任务先读[当前工作与交接](docs/current-work.md)，这是唯一下一任务入口。** 用户执行Git写操作，助手不自动提交、推送或合并；用户报告的远端收尾与本轮独立核验区分记录。
+**继续任务先读[当前工作与交接](docs/current-work.md)，这是唯一下一任务入口。** 协作与Git操作约定见[AGENTS.md](AGENTS.md)。本轮M5由用户明确授权提交与推送，Git交付范围见[交付说明](docs/m5-github-closeout.md)。
 
 ## 文档与检查
 
-- [模型卡](MODEL_CARD.md)、[展示页](docs/showcase.md)、[本地复现](docs/local-reproduction.md)、[M4验收](docs/m4-acceptance.md)。
-- [原M3实验报告](docs/m3-experiment-report.md)、[M3收尾](docs/m3-closeout.md)、[重复诊断](docs/generation-repetition-guide.md)、[续训对照](docs/bounded-continuation-execution.md)。
-- [运行接口](docs/runtime-reference.md)、[Tokenizer](docs/tokenizer-guide.md)、[编码验收](docs/token-encoding-guide.md)、[短训练恢复](docs/33m-short-validation.md)、[云端资源](docs/autodl-resource-guide.md)。
-- [数据状态](data/README.md)、[冻结输入与100M范围](docs/pretraining-100m-guide.md)、[来源](configs/wikipedia_20231101_zh_source.json)、[阶段路线](docs/learning-roadmap.md)。
+- [完整目录与文档导航](docs/README.md)：按当前M5、33M成果、接口参考和历史实验分类。
+- [当前工作](docs/current-work.md)、[M5任务与样本规范](docs/m5-task-spec-v1.2.md)、[阶段路线](docs/learning-roadmap.md)。
+- [模型卡](MODEL_CARD.md)、[展示页](docs/showcase.md)、[本地复现](docs/local-reproduction.md)、[M3收尾](docs/m3-closeout.md)。
+- [运行接口](docs/runtime-reference.md)、[数据状态](data/README.md)；其他已完成实验的步骤从分类导航按需查阅。
 
 已有Windows环境的检查命令：
 

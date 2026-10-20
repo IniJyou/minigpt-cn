@@ -1,0 +1,139 @@
+{
+  "study_id": "m5-synthetic-diagnostic-v1",
+  "status": "defined_not_generated",
+  "planned_generation_calls": 48,
+  "planned_annotation_positions": 72,
+  "unique_semantic_blocks": 12,
+  "seed_count": 1,
+  "max_total_new_tokens": 49152,
+  "source": "new_assistant_authored_synthetic_not_independent_gold",
+  "formal_train_valid_test": false,
+  "data_families": [
+    {
+      "group_id": "d01",
+      "multi_block_id": "b0001",
+      "single_review_id": "d01_u1",
+      "single_block_id": "b0001"
+    },
+    {
+      "group_id": "d01",
+      "multi_block_id": "b0002",
+      "single_review_id": "d01_u2",
+      "single_block_id": "b0001"
+    },
+    {
+      "group_id": "d01",
+      "multi_block_id": "b0003",
+      "single_review_id": "d01_u3",
+      "single_block_id": "b0001"
+    },
+    {
+      "group_id": "d02",
+      "multi_block_id": "b0001",
+      "single_review_id": "d02_u1",
+      "single_block_id": "b0001"
+    },
+    {
+      "group_id": "d02",
+      "multi_block_id": "b0002",
+      "single_review_id": "d02_u2",
+      "single_block_id": "b0001"
+    },
+    {
+      "group_id": "d02",
+      "multi_block_id": "b0003",
+      "single_review_id": "d02_u3",
+      "single_block_id": "b0001"
+    },
+    {
+      "group_id": "d03",
+      "multi_block_id": "b0001",
+      "single_review_id": "d03_u1",
+      "single_block_id": "b0001"
+    },
+    {
+      "group_id": "d03",
+      "multi_block_id": "b0002",
+      "single_review_id": "d03_u2",
+      "single_block_id": "b0001"
+    },
+    {
+      "group_id": "d03",
+      "multi_block_id": "b0003",
+      "single_review_id": "d03_u3",
+      "single_block_id": "b0001"
+    },
+    {
+      "group_id": "d04",
+      "multi_block_id": "b0001",
+      "single_review_id": "d04_u1",
+      "single_block_id": "b0001"
+    },
+    {
+      "group_id": "d04",
+      "multi_block_id": "b0002",
+      "single_review_id": "d04_u2",
+      "single_block_id": "b0001"
+    },
+    {
+      "group_id": "d04",
+      "multi_block_id": "b0003",
+      "single_review_id": "d04_u3",
+      "single_block_id": "b0001"
+    }
+  ],
+  "class_support_per_condition": {
+    "heading": 1,
+    "body": 3,
+    "definition": 1,
+    "theorem": 2,
+    "proof": 1,
+    "example": 1,
+    "other": 2,
+    "uncertain": 1
+  },
+  "conditions": [
+    {
+      "id": "a_multi",
+      "protocol": "configs/m5_diagnostic_v1/a_multi.json",
+      "prompt": "configs/m5_structure_prompt_v1_1.txt",
+      "calls": 4,
+      "blocks": 12
+    },
+    {
+      "id": "a_single",
+      "protocol": "configs/m5_diagnostic_v1/a_single.json",
+      "prompt": "configs/m5_structure_prompt_v1_1.txt",
+      "calls": 12,
+      "blocks": 12
+    },
+    {
+      "id": "b_multi",
+      "protocol": "configs/m5_diagnostic_v1/b_multi.json",
+      "prompt": "configs/m5_diagnostic_v1/prompt_definition_example.txt",
+      "calls": 4,
+      "blocks": 12
+    },
+    {
+      "id": "b_single",
+      "protocol": "configs/m5_diagnostic_v1/b_single.json",
+      "prompt": "configs/m5_diagnostic_v1/prompt_definition_example.txt",
+      "calls": 12,
+      "blocks": 12
+    },
+    {
+      "id": "c_multi",
+      "protocol": "configs/m5_diagnostic_v1/c_multi.json",
+      "prompt": "configs/m5_diagnostic_v1/prompt_no_example.txt",
+      "calls": 4,
+      "blocks": 12
+    },
+    {
+      "id": "c_single",
+      "protocol": "configs/m5_diagnostic_v1/c_single.json",
+      "prompt": "configs/m5_diagnostic_v1/prompt_no_example.txt",
+      "calls": 12,
+      "blocks": 12
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "protocol_version": "m5-rules-calibration-v1",
+  "rule_version": "m5-structure-v1.1",
+  "system_prompt": "configs/m5_structure_prompt_v1_1.txt",
+  "schema": "configs/m5_sample_v1_1.schema.json",
+  "calibration_file": "data/processed/m5_note_annotation_batch2_v1_1/combined_annotations.review.jsonl",
+  "expected_samples": 16,
+  "expected_blocks": 54,
+  "use": "calibration_only_not_independent_human_gold",
+  "rule_features": "fixed presentation/role prefixes; protected blocks; finite argument/request cues; block-local only",
+  "metrics": "strict whole-response validity; eight-class macro/micro F1; complete/nonnull title and reason; full sample match",
+  "zero_division": 0,
+  "failed_response": "all reference blocks FN; recognizable predicted kinds FP; invalid kind items counted separately; no repair/filtering",
+  "model_run": false,
+  "model_revision": null,
+  "chat_template": null,
+  "model_decoding": null,
+  "artifacts": {
+    "docs/m5-task-spec.md": "ddf0862b4dce6614f731804f443445c6c3b64674eba27386d89b56ac075d0ea0",
+    "docs/m5-task-spec-v1.1.md": "73eacce6d828e2f3288bb504b4a826f07b2cd227c6a406b5a1127dd0b6c3a015",
+    "docs/m5-rule-baseline.md": "bc21a4c72445f174ea5c50be16b8b8a8e3224c0bce09ddb08781284aef7d2d68",
+    "configs/m5_structure_prompt_v1_1.txt": "66ffe76a8c496735b99840dcc674735abe74cfa0c10912ed0e8a6dc26532931e",
+    "configs/m5_sample_v1_1.schema.json": "f5daff524f85252b77b89b584b2bd59a81ed36cbaa167eb6e3b119ebeac03291",
+    "src/minigpt_cn/m5_structure.py": "6ec65166c3472edb71f7ab4d8a7c1b179132a9162caac0729fb0a191a34c923c",
+    "src/minigpt_cn/m5_rule_run.py": "deb2a7794a7304b913a62ea0eb9190b46616321b1aafadd8d36459c0a6c8e400",
+    "tests/test_m5_structure.py": "c2c16dd36997074273ff210941da3eb9eab05d71da41fec17805e3a5b3ea4140",
+    "data/processed/m5_note_annotation_batch2_v1_1/combined_annotations.review.jsonl": "cb00356682812a44c3a07cef85088d1807a880a207265a6b5a9e4f62fd8dd9fe",
+    "data/processed/m5_note_annotation_batch2_v1_1/source_manifest.json": "403b7b82291f6085513e6bde75614e1569f52f93f0b1e28d8a57f0774d5f2347"
+  }
+}

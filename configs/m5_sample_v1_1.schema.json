@@ -1,0 +1,231 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MiniGPT-CN M5 structure sample v1.1",
+  "description": "单条标注记录；输出使用$defs.prediction，规则见docs/m5-task-spec-v1.1.md。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "sample_id",
+    "source",
+    "split",
+    "input",
+    "target"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "m5-structure-v1.1"
+    },
+    "sample_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "group_id",
+        "synthetic"
+      ],
+      "properties": {
+        "source_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "group_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "synthetic": {
+          "type": "boolean"
+        }
+      }
+    },
+    "split": {
+      "enum": [
+        "spec_demo",
+        "train",
+        "valid",
+        "test"
+      ]
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "blocks"
+      ],
+      "properties": {
+        "blocks": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "block_id",
+              "text"
+            ],
+            "properties": {
+              "block_id": {
+                "$ref": "#/$defs/block_id"
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000
+              }
+            }
+          }
+        }
+      }
+    },
+    "target": {
+      "$ref": "#/$defs/prediction"
+    }
+  },
+  "$defs": {
+    "block_id": {
+      "type": "string",
+      "minLength": 5,
+      "maxLength": 5,
+      "pattern": "^b000[1-8]$"
+    },
+    "prediction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "annotations"
+      ],
+      "properties": {
+        "annotations": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "items": {
+            "$ref": "#/$defs/annotation"
+          }
+        }
+      }
+    },
+    "annotation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "block_id",
+        "kind",
+        "title",
+        "reason"
+      ],
+      "properties": {
+        "block_id": {
+          "$ref": "#/$defs/block_id"
+        },
+        "kind": {
+          "enum": [
+            "body",
+            "heading",
+            "definition",
+            "theorem",
+            "proof",
+            "example",
+            "other",
+            "uncertain"
+          ]
+        },
+        "title": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "reason": {
+          "enum": [
+            null,
+            "out_of_scope",
+            "mixed_roles",
+            "ambiguous",
+            "insufficient_context"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "other"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "reason": {
+                "const": "out_of_scope"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "uncertain"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "reason": {
+                "enum": [
+                  "mixed_roles",
+                  "ambiguous",
+                  "insufficient_context"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "body",
+                  "heading",
+                  "definition",
+                  "theorem",
+                  "proof",
+                  "example"
+                ]
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "reason": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
